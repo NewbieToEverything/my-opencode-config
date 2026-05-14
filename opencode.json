@@ -1,0 +1,90 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "llama-cpp-20b": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (20B)",
+      "options": {
+        "baseURL": "http://localhost:8081/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "gpt-oss-20b-Q4_K_M.gguf": {
+          "name": "gpt-oss-20b",
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "llama-cpp-120b": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (120B)",
+      "options": {
+        "baseURL": "http://localhost:8082/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "gpt-oss-120b-mxfp4-00001-of-00003.gguf": {
+          "name": "gpt-oss-120b",
+          "limit": {
+            "context": 131072,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "llama-cpp-qwen35": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (Qwen35 35B-A3B)",
+      "options": {
+        "baseURL": "http://localhost:8083/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "Qwen3.5-35B-A3B-Q4_K_M.gguf": {
+          "name": "qwen35-35b-a3b",
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "llama-cpp-qwen36": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (Qwen3.6 35B-A3B)",
+      "options": {
+        "baseURL": "http://localhost:8084/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "Qwen3.6-35B-A3B-Q4_K_M.gguf": {
+          "name": "qwen36-35b-a3b",
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "llama-cpp-gemma4": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (Gemma 4 26B-A4B)",
+      "options": {
+        "baseURL": "http://localhost:8085/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "gemma-4-26B-A4B-it-Q4_K_M.gguf": {
+          "name": "gemma4-26b-a4b",
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        }
+      }
+    }
+  }
+}
