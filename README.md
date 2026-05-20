@@ -9,6 +9,7 @@
 | 文件/目录 | 说明 |
 |---------|------|
 | `skills/` | 自定义全局 Skills，存放于 `~/.config/opencode/skills/*/SKILL.md`，供 agents 按需加载 |
+| `rules/` | 自定义规则文件，通过 `opencode.json` 的 `instructions` 字段引入，为 agents 提供额外行为指导 |
 | `AGENTS.md` | 全局指令文件，存放于 `~/.config/opencode/AGENTS.md`，在所有会话中生效 |
 | `opencode.json` | 全局配置文件，存放于 `~/.config/opencode/opencode.json`，用于配置 LLM 提供商、Agents、MCP 等 |
 
@@ -35,13 +36,14 @@ cd ~/projects/my-opencode-config
 rm -f ~/.config/opencode/AGENTS.md
 rm -f ~/.config/opencode/opencode.json
 rm -rf ~/.config/opencode/skills
+rm -rf ~/.config/opencode/rules
 
 ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.config/opencode/AGENTS.md
 ln -sf ~/projects/my-opencode-config/opencode.json ~/.config/opencode/opencode.json
 ln -sf ~/projects/my-opencode-config/skills ~/.config/opencode/skills
 ln -sf ~/projects/my-opencode-config/rules ~/.config/opencode/rules
 
-# 3. 验证
+# 4. 验证
 ls -la ~/.config/opencode/ | grep -E "^l"
 ```
 
@@ -64,6 +66,7 @@ git branch -m main
 cp ~/.config/opencode/AGENTS.md ./
 cp ~/.config/opencode/opencode.json ./
 [ -d ~/.config/opencode/skills ] && cp -r ~/.config/opencode/skills/ ./
+[ -d ~/.config/opencode/rules ] && cp -r ~/.config/opencode/rules/ ./
 
 # 4. 创建 .gitignore
 echo "auth.json" > .gitignore
@@ -81,8 +84,10 @@ git push -u origin main
 rm -f ~/.config/opencode/AGENTS.md
 rm -f ~/.config/opencode/opencode.json
 rm -rf ~/.config/opencode/skills
+rm -rf ~/.config/opencode/rules
 
 ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.config/opencode/AGENTS.md
 ln -sf ~/projects/my-opencode-config/opencode.json ~/.config/opencode/opencode.json
 ln -sf ~/projects/my-opencode-config/skills ~/.config/opencode/skills
+ln -sf ~/projects/my-opencode-config/rules ~/.config/opencode/rules
 ```
