@@ -39,6 +39,7 @@ rm -rf ~/.config/opencode/skills
 ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.config/opencode/AGENTS.md
 ln -sf ~/projects/my-opencode-config/opencode.json ~/.config/opencode/opencode.json
 ln -sf ~/projects/my-opencode-config/skills ~/.config/opencode/skills
+ln -sf ~/projects/my-opencode-config/rules ~/.config/opencode/rules
 
 # 3. 验证
 ls -la ~/.config/opencode/ | grep -E "^l"

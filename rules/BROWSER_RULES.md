@@ -1,6 +1,6 @@
 # Browser Automation Rules
 
-## **ALWAYS** use the agent-browser skill
+## when webfetch/websearc fail, use the agent-browser skill instead
 
 When the user requests searching, fetching, extracting data from, taking snapshot of, form automation or interacting with websites, invoke and use the agent-browser skill.  
 
