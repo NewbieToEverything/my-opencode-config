@@ -86,6 +86,13 @@ description: Docker镜像构建、模型下载、部署全流程
 
 #### docker-compose.yml
 - 检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果
+- **注意**：仅配 `-u` 不够，UID 必须在容器内有 `/etc/passwd` 条目。需在 Dockerfile 末尾创建对应用户：
+  ```dockerfile
+  RUN groupadd -g <GID> <用户名> && \
+      useradd -m -u <UID> -g <GID> -s /bin/bash <用户名>
+  USER <用户名>
+  ```
+  如果 UID 不在 `/etc/passwd` 中，某些 Python 库（如 PyTorch 的 `torch.cuda` 初始化）调用 `getpass.getuser()` 时会报 `KeyError: 'getpwuid(): uid not found'`
 
 #### GPU 配置
 - 所有需要 GPU 的容器，必须在 docker-compose.yml 中添加以下配置（推荐方式，无需修改 daemon.json）：
