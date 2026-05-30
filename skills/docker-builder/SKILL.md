@@ -16,17 +16,27 @@ description: Docker镜像构建、模型下载、部署全流程
 
 ### 依赖检查
 - Docker 和 Docker Compose 已安装
-- NVIDIA Driver 和 nvidia-container-toolkit 正常
+- NVIDIA Driver 和 nvidia-container-toolkit 已安装
 - 磁盘空间充足
 
 ### 选择基础镜像
 - 分析容器的用途
-- 根据用途选择合适的基础镜像，优先使用官方（例如微软、GitHub、NVIDIA、Docker等）维护的基础镜像
-- 如果需要使用 CUDA，需检查备选基础镜像的 CUDA 版本与当前宿主机的 NVIDIA Driver 兼容性
+- 根据用途选择合适的基础镜像，优先使用官方维护的基础镜像
+- 如果需要使用 CUDA，需检查：
+  1. 基础镜像的 CUDA 版本与宿主机 NVIDIA Driver 的兼容性
+  2. **框架版本与 GPU 架构的兼容性**（必须在调研阶段完成）
+     - 查询 GPU 的 compute capability（如 RTX 5070 Ti = sm_120 Blackwell）
+     - 查询框架支持的 compute capability 列表（如 PyTorch 2.2.2 仅支持到 sm_90）
+     - 若不兼容，升级框架版本或选择支持该架构的版本
+- 下载基础镜像后，立即验证 GPU 可透传到容器：
+  `docker run --rm --gpus all <基础镜像> ls /dev/nvidia*`
+  - 若看不到设备，需排查 nvidia-container-toolkit 配置
+  - 验证通过后方可进入下一步
 
 ### 冲突检测
 - 检查备选端口是否被占用
 - 检查备选容器名是否已存在
+- 检查 GPU 是否被其他容器占用：`nvidia-smi` 查看显存使用
 
 ### 下载
 - **Docker镜像源配置**：使用 `docker pull` 下载基础镜像前，需先配置国内 docker 镜像源。在 `/etc/docker/daemon.json` 中配置多个镜像源以提升可移植性和稳定性：
@@ -43,6 +53,8 @@ description: Docker镜像构建、模型下载、部署全流程
   ```
   配置后执行 `sudo systemctl daemon-reload && sudo systemctl restart docker` 使其生效。
 - 超时直接重试，直到下载完毕。若基础镜像大于 200MB，设定最长等待时间（如 10-15 分钟），超时后继续重试直到下载完成。只有当下载速度稳定低于 50 kb/s 时终止下载，寻找其他解决方案并告知用户。
+- **镜像源限制**：配置了 `registry-mirrors` 不等于所有镜像都能从 mirror 拉取。mirror 只缓存热门小镜像，大镜像的大层可能没有缓存，回源 Docker Hub 时可能超时。
+  - 若多次重试仍卡在同一层，放弃该镜像，改用小基础镜像 + pip 安装框架
 
 ## 第二步：创建容器
 
@@ -74,6 +86,23 @@ description: Docker镜像构建、模型下载、部署全流程
 
 #### docker-compose.yml
 - 检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果
+
+#### GPU 配置
+- 所有需要 GPU 的容器，必须在 docker-compose.yml 中添加以下配置（推荐方式，无需修改 daemon.json）：
+  ```yaml
+  services:
+    服务名:
+      deploy:
+        resources:
+          reservations:
+            devices:
+              - driver: nvidia
+                count: all
+                capabilities: [gpu]
+  environment:
+    - NVIDIA_VISIBLE_DEVICES=all
+    - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+  ```
 
 ### 构建命令
 
@@ -128,6 +157,14 @@ description: Docker镜像构建、模型下载、部署全流程
 - `nvidia-smi` 检查 GPU 显存占用
 - `docker exec -it 容器名 /bin/bash` 进入容器调试
 
+### GPU 验证（容器启动后必须执行）
+- 根据容器用途选择验证命令：
+  - PyTorch 容器：`docker exec 容器名 python3 -c "import torch; print(torch.cuda.is_available())"`
+  - 通用容器：`docker exec 容器名 ls /dev/nvidia*` 确认 GPU 设备存在
+- 若验证失败，检查：
+  1. 确认 docker-compose.yml 中已配置 deploy.resources.reservations.devices
+  2. `docker exec 容器名 env | grep NVIDIA` 确认环境变量已注入
+
 ## 特定用途容器的配置细节
 
-- 容器需要生成含中文的报告（HTML/PNG/PDF）时，按以下情况处理中文字体：`assets/container-data-analysis-chinese-font.md`
+- 容器需要生成含中文的报告（HTML/PNG/PDF）时，按以下情况处理中文字体：读取本 skill 目录下的 `assets/container-data-analysis-chinese-font.md`
