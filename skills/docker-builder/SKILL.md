@@ -4,38 +4,29 @@ description: Docker镜像构建、模型下载、部署全流程
 ---
 
 ## 必须遵守
-
 - 必须使用 `docker compose`（不是 `docker run`）
-- 用户匹配：容器的 `UID/GID` 必须与宿主机一致
 - 容器名：必须使用小写字母+短横线
+- `image` 参数：所有自定义镜像必须在 `docker-compose.yml` 中显式指定 `image:`
 - 健康检查：所有服务必须配置 `healthcheck`
 - 若有项目目录，必须显式挂载
 - 若有环境变量文件，必须显式挂载
 
 ## 第一步：前期工作
-
 ### 依赖检查
 - Docker 和 Docker Compose 已安装
 - NVIDIA Driver 和 nvidia-container-toolkit 已安装
 - 磁盘空间充足
 
 ### 选择基础镜像
-- 分析容器的用途
-- 根据用途选择合适的基础镜像，优先使用官方维护的基础镜像
+- 分析容器的用途，根据用途选择合适的基础镜像，优先使用官方维护的基础镜像
 - 如果需要使用 CUDA，需检查：
   1. 基础镜像的 CUDA 版本与宿主机 NVIDIA Driver 的兼容性
-  2. **框架版本与 GPU 架构的兼容性**（必须在调研阶段完成）
-     - 查询 GPU 的 compute capability（如 RTX 5070 Ti = sm_120 Blackwell）
-     - 查询框架支持的 compute capability 列表（如 PyTorch 2.2.2 仅支持到 sm_90）
-     - 若不兼容，升级框架版本或选择支持该架构的版本
-- 下载基础镜像后，立即验证 GPU 可透传到容器：
-  `docker run --rm --gpus all <基础镜像> ls /dev/nvidia*`
-  - 若看不到设备，需排查 nvidia-container-toolkit 配置
-  - 验证通过后方可进入下一步
+  2. 框架（如 PyTorch、TensorFlow、vLLM 等）版本与 GPU  compute capability（架构代次，如 sm_90/sm_120）的兼容性
 
 ### 冲突检测
 - 检查备选端口是否被占用
 - 检查备选容器名是否已存在
+- 若自定义镜像，检查备选镜像名是否已存在
 - 检查 GPU 是否被其他容器占用：`nvidia-smi` 查看显存使用
 
 ### 下载
@@ -53,13 +44,19 @@ description: Docker镜像构建、模型下载、部署全流程
   ```
   配置后执行 `sudo systemctl daemon-reload && sudo systemctl restart docker` 使其生效。
 - 超时直接重试，直到下载完毕。若基础镜像大于 200MB，设定最长等待时间（如 10-15 分钟），超时后继续重试直到下载完成。只有当下载速度稳定低于 50 kb/s 时终止下载，寻找其他解决方案并告知用户。
-- **镜像源限制**：配置了 `registry-mirrors` 不等于所有镜像都能从 mirror 拉取。mirror 只缓存热门小镜像，大镜像的大层可能没有缓存，回源 Docker Hub 时可能超时。
-  - 若多次重试仍卡在同一层，放弃该镜像，改用小基础镜像 + pip 安装框架
+- 若多次重试仍卡在同一层，放弃该基础镜像，改用纯净的基础镜像（只有基本的 Linux 系统） + pip 安装框架
+- 如需使用 GPU，基础镜像下载完毕后需验证 GPU 可透传到容器，若看不到设备，需排查 nvidia-container-toolkit 配置：
+  `docker run --rm --gpus all <基础镜像> ls /dev/nvidia*`
 
-## 第二步：创建容器
+## 第二步：创建 docker-compose.yml 和 dockerfile
+### dockerfile
+核心原则 - **RUN 命令合并**：dockerfile 中应合并所有能合并的 RUN 命令（用 `&&` 串联），减少镜像层数，提升构建效率。示例：
+```dockerfile
+RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
+    pip install --no-cache-dir --upgrade pip
+```
 
-### apt/pip 国内源
-
+#### apt/pip 国内源
 自建镜像需在 dockerfile 里为所有的安装服务配置国内镜像源：
 - 在 `apt-get update` 之前完成 apt 源全部替换（含 security）：
   ```dockerfile
@@ -74,28 +71,26 @@ description: Docker镜像构建、模型下载、部署全流程
   -i https://pypi.tuna.tsinghua.edu.cn/simple
   ```
 
-### 用户
-
-#### dockerfile
-- 确认基础镜像的默认用户：`docker run --rm <镜像名> id`
+#### 用户
+- 下载完基础镜像后，要确认镜像的默认用户：`docker run --rm <镜像名> id`
 - 需要运行 `apt-get` 的步骤，必须切换 root：
   1. `USER root`
   2. 运行 `apt-get update && apt-get install ...`
   3. 完成后切回基础镜像的默认用户：`USER <查到的用户名>`
 - 禁止在 `apt-get` 后使用 `chown` 修改默认用户的主目录，除非确认目标组存在
-
-#### docker-compose.yml
-- 检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果
-- **注意**：仅配 `-u` 不够，UID 必须在容器内有 `/etc/passwd` 条目。需在 Dockerfile 末尾创建对应用户：
+- **注意**：仅配 `-u` 不够，UID 必须在容器内有 `/etc/passwd` 条目。需在 dockerfile 末尾创建对应用户：
   ```dockerfile
   RUN groupadd -g <GID> <用户名> && \
       useradd -m -u <UID> -g <GID> -s /bin/bash <用户名>
   USER <用户名>
   ```
-  如果 UID 不在 `/etc/passwd` 中，某些 Python 库（如 PyTorch 的 `torch.cuda` 初始化）调用 `getpass.getuser()` 时会报 `KeyError: 'getpwuid(): uid not found'`
+
+### docker-compose.yml
+#### 用户
+检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果，对应在 dockerfile 末尾创建同 UID 的用户（见上文 dockerfile → 用户）
 
 #### GPU 配置
-- 所有需要 GPU 的容器，必须在 docker-compose.yml 中添加以下配置（推荐方式，无需修改 daemon.json）：
+- 所有需要使用 GPU 的容器，必须在 docker-compose.yml 中添加以下配置：
   ```yaml
   services:
     服务名:
@@ -111,25 +106,17 @@ description: Docker镜像构建、模型下载、部署全流程
     - NVIDIA_DRIVER_CAPABILITIES=compute,utility
   ```
 
-### 构建命令
-
+### 第三步：构建镜像
 - **Cache 策略**：
   - 调整 dockerfile 代码后重新 build 必须使用 `--no-cache`
   - 需要重新 build 来更新镜像的依赖源（apt-get update）时，必须使用 `--no-cache`
   - 因超时等原因重试失败的 build（未修改代码）→ 使用 cache（利用已有层加速构建）
 - 调试构建步骤：`docker compose build --progress=plain`
 
-- **RUN命令合并原则**：dockerfile 中应合并所有能合并的 RUN 命令（用 `&&` 串联），减少镜像层数，提升构建效率。
-  示例：
-  ```dockerfile
-  RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
-      pip install --no-cache-dir --upgrade pip
-  ```
 
-## 第三步：VS Code Dev Container 配置
-
+## 第四步：VS Code Dev Container 配置
 ### 方案选择
-- 已有容器只需要编辑/查看文件：使用 Attach Shell 模式
+- 已有容器只需要编辑/查看文件：使用 Attach Shell 模式（优先）
 - 需要 VS Code 自动安装扩展、自动打开工作区：使用完整 Dev Container 配置
 
 ### Attach Shell 配置
@@ -141,7 +128,6 @@ description: Docker镜像构建、模型下载、部署全流程
     "attachedWorkspaceFolder": "/工作目录"
   }
   ```
-- 使用方式：`Ctrl+Shift+P` → `Dev Containers: Attach to Running Container...` → 选择容器
 - 暴露端口在 `docker-compose.yml` 的 `ports` 中配置，不在 Dev Container 配置中配置
 
 ### 扩展安装与持久化
@@ -152,8 +138,7 @@ description: Docker镜像构建、模型下载、部署全流程
   - 将 `~/.vscode-server/extensions/` 挂载为 volume
 - 容器重建后未持久化的扩展会丢失，需重新安装
 
-## 第四步：验证与调试
-
+## 第五步：验证与调试
 ### 健康检查
 - docker compose ps 显示 running
 - curl localhost: 端口 /health 返回正常
@@ -164,14 +149,12 @@ description: Docker镜像构建、模型下载、部署全流程
 - `nvidia-smi` 检查 GPU 显存占用
 - `docker exec -it 容器名 /bin/bash` 进入容器调试
 
-### GPU 验证（容器启动后必须执行）
-- 根据容器用途选择验证命令：
-  - PyTorch 容器：`docker exec 容器名 python3 -c "import torch; print(torch.cuda.is_available())"`
-  - 通用容器：`docker exec 容器名 ls /dev/nvidia*` 确认 GPU 设备存在
-- 若验证失败，检查：
-  1. 确认 docker-compose.yml 中已配置 deploy.resources.reservations.devices
-  2. `docker exec 容器名 env | grep NVIDIA` 确认环境变量已注入
+### GPU 验证
+如果需要使用 GPU,在容器启动后做如下验证：
+- 根据容器用途选择验证命令来确认 GPU 设备存在：
+  - 通用容器：`docker exec 容器名 nvidia-smi`
+  - 使用了框架的容器：需采用框架特定的命令，如 PyTorch 容器采用 `docker exec 容器名 python3 -c "import torch; print(torch.cuda.is_available())"`
+- 若验证失败，检查环境变量 `docker exec 容器名 env | grep NVIDIA`
 
 ## 特定用途容器的配置细节
-
-- 容器需要生成含中文的报告（HTML/PNG/PDF）时，按以下情况处理中文字体：读取本 skill 目录下的 `assets/container-data-analysis-chinese-font.md`
+- 容器需要生成含中文的报告（HTML/PNG/PDF）时，读取本 skill 目录下的 `assets/container-data-analysis-chinese-font.md`
