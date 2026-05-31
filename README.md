@@ -4,7 +4,7 @@
 
 ---
 
-## 包含内容
+## 管理内容
 
 | 文件/目录 | 说明 |
 |---------|------|
@@ -15,11 +15,17 @@
 
 通过 [skill-manager](https://github.com/NewbieToEverything/skills-manager) 容器安装的第三方全局 skill 自动安装在 `~/.agents/skills/` 目录下，OpenCode 和 Codex 都会扫描该目录。本仓库仅托管**自定义的全局 skill**，通过软链接注入 `.agents/skills/`，实现一处维护、双 agents 共享。
 
----
+软链接总览：
+| 目标路径 | 源路径 |
+|---------|--------|
+| `~/.config/opencode/AGENTS.md` | `my-opencode-config/AGENTS.md` |
+| `~/.config/opencode/opencode.json` | `my-opencode-config/opencode.json` |
+| `~/.config/opencode/rules` | `my-opencode-config/rules` |
+| `~/.agents/skills/<name>/` | `my-opencode-config/skills/<name>/` |
 
-## 创建统一管理
+## 管理方式
 
-### 场景 A：全新安装（从 GitHub 恢复）
+### 场景 A：从 GitHub 恢复
 
 ```bash
 # 1. 创建项目目录
@@ -75,7 +81,7 @@ ln -sf ~/projects/my-opencode-config/rules ~/.config/opencode/rules
 ln -sf ~/projects/my-opencode-config/skills/* ~/.agents/skills/
 ```
 
-### 场景 C：新增自定义 Skill
+### 场景 C：新增自定义全局 Skill
 
 ```bash
 # 1. 创建 skill 目录
@@ -86,29 +92,3 @@ mkdir -p ~/projects/my-opencode-config/skills/<skill-name>
 ln -sf ~/projects/my-opencode-config/skills/* ~/.agents/skills/
 
 ```
-
----
-
-## 维护说明
-
-### 自定义 Skill 文件结构
-
-```
-skills/<skill-name>/
-└── SKILL.md
-```
-
-### 软链接总览
-
-| 目标路径 | 源路径 |
-|---------|--------|
-| `~/.config/opencode/AGENTS.md` | `my-opencode-config/AGENTS.md` |
-| `~/.config/opencode/opencode.json` | `my-opencode-config/opencode.json` |
-| `~/.config/opencode/rules` | `my-opencode-config/rules` |
-| `~/.agents/skills/<name>/` | `my-opencode-config/skills/<name>/` |
-
-### 生命周期
-
-- **新增自定义 skill** → 创建目录 → `ln -sf skills/* .agents/skills/` → git add → git commit
-- **删除自定义 skill** → git rm → `rm .agents/skills/<name>` → git commit
-- **CLI 安装的第三方 skill** → 通过 skill-manager 管理，本仓库不动
