@@ -1,27 +1,25 @@
 # OpenCode 全局配置统一管理
 
-将 OpenCode 的配置文件集中到同一项目目录下管理，通过符号链接同步到 OpenCode 的默认路径，并通过 Git 版本控制并托管到 GitHub，便于跨设备同步和重装后快速恢复。针对 skills,借助 OpenCode 和 Codex 都会扫描 `~/.agents/skills` 目录的这一设定，实现 OpenCode 和 Codex 共享自定义全局 skill 的效果。
-
----
+将 OpenCode 的配置文件集中到同一项目目录下管理，通过符号链接同步到 OpenCode 和 Codex 的默认路径，实现一套配置， OpenCode 和 Codex 共享。
 
 ## 管理内容
 
 | 文件/目录 | 说明 |
 |---------|------|
-| `skills/` | 自定义全局 Skill 源文件目录。存放在此的自定义 skill 通过软链接注入 `~/.agents/skills/<name>/`，供 OpenCode 和 Codex 按需加载 |
-| `rules/` | 自定义规则文件，通过 `opencode.json` 的 `instructions` 字段引入，为 OpenCode 提供额外行为指导 |
-| `AGENTS.md` | 全局指令文件，存放于 `~/.config/opencode/AGENTS.md`，在所有会话中生效 |
-| `opencode.json` | 全局配置文件，存放于 `~/.config/opencode/opencode.json`，用于配置 LLM 提供商、Agents、MCP 等 |
-
-通过 [skill-manager](https://github.com/NewbieToEverything/skills-manager) 容器安装的第三方全局 skill 自动安装在 `~/.agents/skills/` 目录下，OpenCode 和 Codex 都会扫描该目录。本仓库仅托管**自定义的全局 skill**，通过软链接注入 `.agents/skills/`，实现一处维护、双 agents 共享。
+| `skills/` | 自定义全局 Skill 源文件目录。存放在此的自定义 skill 通过软链接注入 `~/.agents/skills/<name>/`（OpenCode 和 Codex 均扫描） |
+| `AGENTS.md` | 全局指令文件，存放于 `~/.config/opencode/AGENTS.md`|
+| `opencode.json` | 全局配置文件（仅适用于 OpenCode），存放于 `~/.config/opencode/opencode.json`|
+| `rules/` | 自定义规则文件，通过 `opencode.json` 的 `instructions` 字段引入|
 
 软链接总览：
 | 目标路径 | 源路径 |
 |---------|--------|
+| `~/.agents/skills/<name>/` | `my-opencode-config/skills/<name>/` |
 | `~/.config/opencode/AGENTS.md` | `my-opencode-config/AGENTS.md` |
+| `~/.codex/AGENTS.md` | `my-opencode-config/AGENTS.md` |
 | `~/.config/opencode/opencode.json` | `my-opencode-config/opencode.json` |
 | `~/.config/opencode/rules` | `my-opencode-config/rules` |
-| `~/.agents/skills/<name>/` | `my-opencode-config/skills/<name>/` |
+
 
 ## 管理方式
 
@@ -40,16 +38,19 @@ cd ~/projects/my-opencode-config
 rm -f ~/.config/opencode/AGENTS.md
 rm -f ~/.config/opencode/opencode.json
 rm -rf ~/.config/opencode/rules
+rm -f ~/.codex/AGENTS.md
 
 ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.config/opencode/AGENTS.md
 ln -sf ~/projects/my-opencode-config/opencode.json ~/.config/opencode/opencode.json
 ln -sf ~/projects/my-opencode-config/rules ~/.config/opencode/rules
+ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.codex/AGENTS.md
 
 # 4. 将自定义 skill 链接到 .agents/skills/
 ln -sf ~/projects/my-opencode-config/skills/* ~/.agents/skills/
 
 # 5. 验证
 ls -la ~/.config/opencode/ | grep -E "^l"
+ls -la ~/.codex/ | grep -E "^l"
 ls -la ~/.agents/skills/ | grep -E "^l"
 ```
 
@@ -59,6 +60,7 @@ ls -la ~/.agents/skills/ | grep -E "^l"
 # 1. 备份现有配置
 cp ~/.config/opencode/AGENTS.md ~/.config/opencode/AGENTS.md.backup
 cp ~/.config/opencode/opencode.json ~/.config/opencode/opencode.json.backup
+cp ~/.codex/AGENTS.md ~/.codex/AGENTS.md.backup
 
 # 2. 创建项目目录并复制配置
 mkdir -p ~/projects/my-opencode-config
@@ -72,10 +74,12 @@ cp ~/.config/opencode/opencode.json ./
 rm -f ~/.config/opencode/AGENTS.md
 rm -f ~/.config/opencode/opencode.json
 rm -rf ~/.config/opencode/rules
+rm -f ~/.codex/AGENTS.md
 
 ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.config/opencode/AGENTS.md
 ln -sf ~/projects/my-opencode-config/opencode.json ~/.config/opencode/opencode.json
 ln -sf ~/projects/my-opencode-config/rules ~/.config/opencode/rules
+ln -sf ~/projects/my-opencode-config/AGENTS.md ~/.codex/AGENTS.md
 
 # 4. 将自定义 skill 链接到 .agents/skills/
 ln -sf ~/projects/my-opencode-config/skills/* ~/.agents/skills/
