@@ -138,16 +138,11 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   - 将 `~/.vscode-server/extensions/` 挂载为 volume
 - 容器重建后未持久化的扩展会丢失，需重新安装
 
-## 第五步：验证与调试
+## 第五步：验证
 ### 健康检查
 - docker compose ps 显示 running
 - curl localhost: 端口 /health 返回正常
 - 日志无 ERROR
-
-### 通用诊断
-- `docker compose logs -f` 查看实时日志
-- `nvidia-smi` 检查 GPU 显存占用
-- `docker exec -it 容器名 /bin/bash` 进入容器调试
 
 ### GPU 验证
 如果需要使用 GPU,在容器启动后做如下验证：
