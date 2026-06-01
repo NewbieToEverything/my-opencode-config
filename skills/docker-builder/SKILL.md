@@ -30,6 +30,7 @@ description: Docker镜像构建、模型下载、部署全流程
 - 检查 GPU 是否被其他容器占用：`nvidia-smi` 查看显存使用
 
 ### 下载
+#### docker 国内镜像源
 - **Docker镜像源配置**：使用 `docker pull` 下载基础镜像前，需先配置国内 docker 镜像源。在 `/etc/docker/daemon.json` 中配置多个镜像源以提升可移植性和稳定性：
   ```json
   {
@@ -48,13 +49,23 @@ description: Docker镜像构建、模型下载、部署全流程
 - 如需使用 GPU，基础镜像下载完毕后需验证 GPU 可透传到容器，若看不到设备，需排查 nvidia-container-toolkit 配置：
   `docker run --rm --gpus all <基础镜像> ls /dev/nvidia*`
 
+#### 代理
+Docker 的代理分两层，必须分别处理：
+| 阶段 | 走不走代理 | 配置方式 |
+|------|-----------|---------|
+| `docker pull` 拉取镜像 | 走 daemon 代理 | 配置 `/etc/systemd/system/docker.service.d/proxy.conf` |
+| `apt`/`pip`/`curl` 等 build 时网络请求 | 不走 daemon 代理 | `network: host` + build args `HTTP_PROXY`/`HTTPS_PROXY`|
+
 ## 第二步：创建 docker-compose.yml 和 dockerfile
 ### dockerfile
-核心原则 - **RUN 命令合并**：dockerfile 中应合并所有能合并的 RUN 命令（用 `&&` 串联），减少镜像层数，提升构建效率。示例：
+核心原则：
+- **RUN 命令合并**：dockerfile 中应合并所有能合并的 RUN 命令（用 `&&` 串联），减少镜像层数，提升构建效率。示例：
 ```dockerfile
 RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && \
     pip install --no-cache-dir --upgrade pip
 ```
+- **先拆依赖层** — 把第三方依赖隔离到中间镜像，主程序出错不用重复编译
+- **先预拉基础镜像** — `docker pull base-image` 提前下载，避免 build 中拉取被代理/限速干扰
 
 #### apt/pip 国内源
 自建镜像需在 dockerfile 里为所有的安装服务配置国内镜像源：
@@ -72,22 +83,22 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   ```
 
 #### 用户
-- 下载完基础镜像后，要确认镜像的默认用户：`docker run --rm <镜像名> id`
-- 需要运行 `apt-get` 的步骤，必须切换 root：
-  1. `USER root`
-  2. 运行 `apt-get update && apt-get install ...`
-  3. 完成后切回基础镜像的默认用户：`USER <查到的用户名>`
-- 禁止在 `apt-get` 后使用 `chown` 修改默认用户的主目录，除非确认目标组存在
-- **注意**：仅配 `-u` 不够，UID 必须在容器内有 `/etc/passwd` 条目。需在 dockerfile 末尾创建对应用户：
-  ```dockerfile
-  RUN groupadd -g <GID> <用户名> && \
-      useradd -m -u <UID> -g <GID> -s /bin/bash <用户名>
-  USER <用户名>
-  ```
+1. 检查宿主机用户名
+2. 下载完基础镜像后，要确认镜像的默认用户：`docker run --rm <镜像名> id`
+  - 若镜像的默认用户 UID 与宿主机一致（`id -u`），直接使用默认用户：`USER <默认用户名>`
+  - 若不匹配，在 dockerfile 末尾创建同 UID 的用户：
+    ```dockerfile
+    RUN groupadd -g <GID> <用户名> && \
+        useradd -m -u <UID> -g <GID> -s /bin/bash <用户名>
+    USER <用户名>
+    ```
+3. 需要运行 `apt-get` 的步骤，必须切换至 root 用户，完成后切回第 2 步中确认的镜像用户（`<默认用户>`或者定义的`<用户名>`）
+4. 禁止在 `apt-get` 后使用 `chown` 修改默认用户的主目录，除非确认目标组存在
+
 
 ### docker-compose.yml
 #### 用户
-检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果，对应在 dockerfile 末尾创建同 UID 的用户（见上文 dockerfile → 用户）
+检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果
 
 #### GPU 配置
 - 所有需要使用 GPU 的容器，必须在 docker-compose.yml 中添加以下配置：
@@ -111,7 +122,10 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   - 调整 dockerfile 代码后重新 build 必须使用 `--no-cache`
   - 需要重新 build 来更新镜像的依赖源（apt-get update）时，必须使用 `--no-cache`
   - 因超时等原因重试失败的 build（未修改代码）→ 使用 cache（利用已有层加速构建）
+  - 失败不要全部重来，阶段 Dockerfile 改最后几层用缓存即可，不需要 `--no-cache` 全部重来
 - 调试构建步骤：`docker compose build --progress=plain`
+- 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位
+- 改一个变量，先确认：换源/改版本前先 `curl -v` 确认可达性
 
 
 ## 第四步：VS Code Dev Container 配置
@@ -153,3 +167,4 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 
 ## 特定用途容器的配置细节
 - 容器需要生成含中文的报告（HTML/PNG/PDF）时，读取本 skill 目录下的 `assets/container-data-analysis-chinese-font.md`
+- 容器需要编译 R 时，读取本 skill 目录下的 `assets/container-r-package-compilation.md`
