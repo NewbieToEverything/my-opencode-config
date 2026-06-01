@@ -125,7 +125,7 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   - 失败不要全部重来，阶段 Dockerfile 改最后几层用缓存即可，不需要 `--no-cache` 全部重来
 - 调试构建步骤：`docker compose build --progress=plain`
 - 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位
-- 改一个变量，先确认：换源/改版本前先 `curl -v` 确认可达性
+- 先诊断再换源 — 安装失败时先 `curl -v` 确认目标源是否可达，不要直接切换源或改版本号
 
 
 ## 第四步：VS Code Dev Container 配置
