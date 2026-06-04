@@ -12,8 +12,16 @@ For the following websites, **MUST** use curl.
 
 ### GitHub.com
 
-All GitHub operations (searching repositories, fetching issues, reading files, etc.) **MUST** use **AUTHENTICATED** curl calls:
+所有 GitHub 操作（搜索仓库、查看 issue、读取文件等）**禁止**使用 webfetch/websearch 等内置工具，**必须**直接使用以下方式之一：
 
-```bash
-curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/..."
-```
+- **gh CLI**（推荐）：
+  ```bash
+  gh search repos "keyword"
+  gh issue view <number>
+  gh repo view <owner>/<repo>
+  ```
+
+- **Authenticated curl**：
+  ```bash
+  curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/..."
+  ```
