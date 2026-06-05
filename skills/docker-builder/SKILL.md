@@ -8,18 +8,20 @@ description: Docker镜像构建、模型下载、部署全流程
 - 容器名：必须使用小写字母+短横线
 - `image` 参数：所有自定义镜像必须在 `docker-compose.yml` 中显式指定 `image:`
 - 健康检查：所有服务必须配置 `healthcheck`
+- 重启策略：所有服务必须配置 `restart` 策略（除非有明确理由不需要）
 - 若有项目目录，必须显式挂载
 - 若有环境变量文件，必须显式挂载
 
 ## 第一步：前期工作
 ### 依赖检查
-- Docker 和 Docker Compose 已安装
-- NVIDIA Driver 和 nvidia-container-toolkit 已安装
+- 确认 Docker 和 Docker Compose 已安装
 - 磁盘空间充足
+- 如果容器需要使用显卡，需确认 NVIDIA Driver 和 nvidia-container-toolkit 已安装
+
 
 ### 选择基础镜像
 - 分析容器的用途
-- 根据用途查询本地已有镜像：`docker images`，若已有满足需求的镜像（名称、标签、CUDA 版本匹配），直接复用
+- 根据用途查询本地已有镜像：`docker images`，若已有满足需求的镜像，直接复用
 - 若无本地可用镜像，再搜索合适的远程基础镜像，优先使用官方维护的
 - 如果需要使用 CUDA，需检查：
   1. 基础镜像的 CUDA 版本与宿主机 NVIDIA Driver 的兼容性
@@ -119,6 +121,9 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
     - NVIDIA_DRIVER_CAPABILITIES=compute,utility
   ```
 
+#### 可执行文件挂载
+- 若容器的目的是提供 CLI 工具但又不希望通过 npm 安装该工具，可将该工具的二进制文件和运行必备文件下载到宿主机，通过 bind mount 挂载进容器，方便在不 rebuild 容器的情况下升级工具
+
 ### 第三步：构建镜像
 - **Cache 策略**：
   - 调整 dockerfile 代码后重新 build 必须使用 `--no-cache`
@@ -126,7 +131,7 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   - 因超时等原因重试失败的 build（未修改代码）→ 使用 cache（利用已有层加速构建）
   - 失败不要全部重来，阶段 Dockerfile 改最后几层用缓存即可，不需要 `--no-cache` 全部重来
 - 调试构建步骤：`docker compose build --progress=plain`
-- 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位
+- 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位。构建成功后若日志无异常，应删除或移出项目目录（如 `/tmp/`），避免污染项目文件
 - 先诊断再换源 — 安装失败时先 `curl -v` 确认目标源是否可达，不要直接切换源或改版本号
 
 
@@ -168,5 +173,6 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 - 若验证失败，检查环境变量 `docker exec 容器名 env | grep NVIDIA`
 
 ## 特定用途容器的配置细节
-- 容器需要生成含中文的报告（HTML/PNG/PDF）时，读取本 skill 目录下的 `assets/container-data-analysis-chinese-font.md`
-- 容器需要编译 R 时，读取本 skill 目录下的 `assets/container-r-package-compilation.md`
+根据需要读取本 skill 目录下的相应文件
+- 容器需要生成含中文的报告（HTML/PNG/PDF）：`assets/container-data-analysis-chinese-font.md`
+- 容器需要编译 R 时：`assets/container-r-package-compilation.md`
