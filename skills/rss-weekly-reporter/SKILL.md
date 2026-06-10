@@ -11,34 +11,21 @@ Generate a weekly research report from Academic Feed Manager output, usually `st
 
 ## Inputs
 
-Default input is `storage/latest_results.json` in `/home/liyujun/projects/academic-feed-manager`.
-
-If the user gives a different run archive, use that file instead. If the user asks for the latest completed run and `latest_results.json` exists, use it directly. Do not run full RSS verification or fetch new publisher data unless the user explicitly asks and names target journals.
-
-Use the model's semantic judgment directly. Do not rely on a fixed keyword list: the user's interests are nuanced, and good matches may be phrased in unexpected ways. If the JSON contains many papers, process papers in batches using title, authors, abstract, source, URL, and date, then merge the strongest candidates across batches.
-
-## User Research Profile
-
-Read `references/user-research-profile.md` before writing the report. This is the only maintained research-interest profile. If the user's interests change, update that natural-language file rather than creating keyword lists.
-
-Core areas:
-- Quantitative psychology / psychometrics.
-- SEM: especially exploratory factor analysis and estimating the number of factors.
-- IRT/CDM: aberrant response detection, person fit, item fit, change point analysis, mixture modeling, careless/rapid/random responding, cheating, item leakage/preknowledge.
-- CDM as current center: estimating number of attributes, attribute hierarchy, Q-matrix calibration, reducing practitioner burden, longitudinal cognitive diagnosis, knowledge tracing, HMM/time-series/LSTM models, and learning material recommendation with reinforcement learning.
-- Current projects: multilevel missing data, ANOVA effect size formula differences and power analysis, LLM prediction of depression and suicidal behavior.
-- Transfer interests: AI, machine learning, reinforcement learning, LLMs, transformers, and methods that can be moved into the above research lines.
+- RSS data: Default input is `storage/latest_results.json` in `/home/liyujun/projects/academic-feed-manager`. If the user gives a different run archive, use that file instead. If the user asks for the latest completed run and `latest_results.json` exists, use it directly.
+- Fetching boundary: do not run full RSS verification or fetch new publisher data unless the user explicitly asks and names target journals.
+- User research profile: read `references/user-research-profile.md` before writing the report. This is the only maintained research-interest profile. If the user's interests change, update that natural-language file rather than creating keyword lists.
+- Screening method: filter papers based on the profile using the model's semantic judgment. If the JSON contains many papers, process papers in batches using title, authors, abstract, source, URL, and date, then merge the strongest candidates across batches.
 
 ## Report Structure
 
-Write the weekly report in Markdown with exactly these sections:
+Write the weekly report in Markdown. Use these sections by default unless the user asks for a different structure:
 
 ```markdown
 # Weekly Research Report - [run_id or date]
 
 ## 1. 我最关心的问题是否有新的研究进展
 
-## 2. 我正在做的 research 是否有新的研究进展
+## 2. 我正在做的研究是否有新的研究进展
 
 ## 3. 我感兴趣领域的新进展，以及可迁移到我研究中的思路
 
@@ -56,22 +43,15 @@ Each paper entry should include:
 
 Do not overclaim. Treat the report as title/abstract triage. Do not infer methods, datasets, results, or claims that are not visible in the RSS metadata.
 
-## Ranking Heuristics
+## Ranking Principles
 
-Prioritize papers with explicit overlap between psychometrics/quantitative methods and modern AI/ML. A paper like the Nature Machine Intelligence example combining psychometrics/measurement with LLMs should be treated as high priority even if it is outside the user's usual journal list. The report should only say that title/abstract metadata makes it look relevant; it should not claim what the full paper proves.
+Prioritize papers by semantic fit to the research profile, not by matching a keyword list. A strong candidate should satisfy at least one of these conditions:
 
-High priority signals:
-- Terms related to CDM, IRT, SEM, factor number, factor analysis, Q-matrix, attribute hierarchy, knowledge tracing, longitudinal diagnosis, person fit, item fit, aberrant response, response time, cheating, item leakage, mixture model, change point.
-- Current project terms: multilevel, hierarchical data, missing data, imputation, ANOVA, effect size, power analysis, depression, suicide, mental health prediction.
-- Transfer terms: LLM, language model, transformer, representation learning, reinforcement learning, knowledge tracing, graph neural network, sequence model, anomaly detection, foundation model.
-- Publication venue is broad or adjacent but high-quality, especially Nature family, Science family, PNAS, psychometrics/statistics/education measurement venues, ML venues, or cognitive science venues.
+- It directly addresses a core research line, current project, or transfer interest in the profile.
+- It offers a method, modeling idea, dataset type, or evaluation perspective that could plausibly migrate into the user's research.
+- It bridges measurement, psychometrics, psychology, education, or mental health with modern AI/ML in a way the user might miss during routine journal scanning.
 
-Medium priority signals:
-- General statistical methodology that could plausibly transfer.
-- AI/ML papers with clear measurement, diagnosis, longitudinal, educational, or psychological data implications.
-
-Low priority signals:
-- Generic AI benchmark papers without measurement, diagnosis, education, psychology, missing-data, or mental-health relevance.
+The report should only say that title/abstract metadata makes a paper look relevant. Do not claim what the full paper proves.
 
 ## Screening Discipline
 

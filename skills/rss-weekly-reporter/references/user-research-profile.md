@@ -6,19 +6,19 @@ Use this profile to rank RSS metadata. The weekly report is a title/author/abstr
 
 The user's field is quantitative psychology / psychometrics.
 
-## Main Research Lines
+## Research Lines
 
 ### SEM
 
 Primary concern: exploratory factor analysis and the number of factors problem. Papers about estimating latent dimensionality, model selection, factor retention, factor number, eigenvalue/parallel analysis alternatives, latent structure discovery, or robust factor analysis are highly relevant.
 
-### IRT and CDM
+### IRT and Response Behavior
 
 Primary concern: aberrant response detection, including careless responding, rapid guessing, random responding, cheating, item preknowledge, and item leakage. Related methods include person fit, item fit, response time modeling, change point analysis, mixture modeling, anomaly detection, and statistical methods for identifying abnormal examinees or items.
 
-### CDM
+### CDM as Current Center
 
-Current center of gravity. Highly relevant themes:
+Highly relevant themes:
 - Reducing practitioner burden in cognitive diagnosis.
 - Estimating the number of attributes.
 - Estimating attribute hierarchy from data.
@@ -44,6 +44,6 @@ High-value transfer patterns:
 - Representation learning for latent attributes, latent traits, item/examinee embeddings, or diagnostic states.
 - Anomaly detection methods that could transfer to aberrant response detection.
 
-## Special Attention Pattern
+## Surprising but Relevant Papers
 
-Surface papers that bridge psychometrics/measurement and modern AI/LLMs even when they appear in broad venues. The motivating example is a Nature-family paper about psychometrics and large language models. Similar papers should appear in the report because they are easy to miss in routine journal scanning but strongly aligned with the user's interests.
+Surface papers that bridge psychometrics, psychological measurement, educational measurement, latent variables, assessment, or mental health with modern AI/ML/LLMs even when they appear in broad or adjacent venues. These papers should appear in the report when the title/abstract suggests a real connection to the user's research, because they are easy to miss in routine journal scanning.
