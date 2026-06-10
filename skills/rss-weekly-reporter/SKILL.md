@@ -11,73 +11,71 @@ Generate a weekly research report from Academic Feed Manager output, usually `st
 
 ## Inputs
 
-- RSS data: Default input is `storage/latest_results.json` in `/home/liyujun/projects/academic-feed-manager`. If the user gives a different run archive, use that file instead. If the user asks for the latest completed run and `latest_results.json` exists, use it directly.
-- User research profile: read `references/user-research-profile.md` before writing the report. This is the only maintained research-interest profile. If the user's interests change, update that natural-language file rather than creating keyword lists.
-- Screening method: filter papers based on the profile using the model's semantic judgment. If the JSON contains many papers, process papers in batches using title, authors, abstract, source, URL, and date, then merge the strongest candidates across batches.
+- RSS data: Default input is `storage/latest_results.json` in `/home/liyujun/projects/academic-feed-manager`. If the user gives a different run archive, use that file instead. 
+- User research profile: read `references/user-research-profile.md` before screening. Treat it as read-only unless the user explicitly asks to update the maintained profile.
+- Metadata fields: use `title`, `authors`, `abstract`, `source`, `url`, `doi`, and `published` only for identification and evidence.
 
-## Report Structure
+## Workflow
 
-Write the weekly report in Markdown. Use these sections by default unless the user asks for a different structure:
+1. Read the maintained research profile.
+2. Read the RSS JSON and inspect run metadata, paper count, and available fields.
+3. Screen papers semantically against the profile. Do not rely on exact keyword matching.
+4. If there are many papers, batch them and keep a shortlist per batch.
+5. If batched, merge shortlists, remove duplicates, and classify candidates using the selection tiers below.
+6. Check coverage against the report structure and profile before writing.
+7. Write a concise Markdown report.
+
+## Selection Rules
+
+1. Classify candidates before writing:
+	- Tier 1: Direct profile hit. Include unless metadata is unusable.
+	- Tier 2: Concrete transfer hit. Include when title or abstract shows a clear method, data, modeling, or evaluation bridge to the profile.
+	- Tier 3: Interesting but remote. Usually omit. If included, keep it short, mark low confidence, and place it under the surprising or follow-up section.
+2. Do not let a remote but interesting paper displace a direct profile hit. When two papers are equally relevant, prefer the one with clearer RSS evidence.
+3. If a section has no strong hit, say that directly instead of filling it with weak papers.
+4. Include adjacent or unexpected papers only when the title or abstract shows a real bridge to the user's research. Avoid broad analogies where the connection depends on saying that an abstract method "resembles" a latent state, diagnosis, or measurement problem. If the bridge requires more than two inference steps, omit it or keep it as a low-confidence follow-up note.
+
+## Evidence Boundary
+
+1. Treat the report as title/abstract triage. Do not fabricate details beyond RSS metadata, and do not claim what the full paper proves.
+2. For each reason, make the evidence level explicit:
+	- Use "题名直接显示..." when only the title supports the match.
+	- Use "RSS 摘要显示..." when the abstract supports the match.
+	- Use "可能迁移到..." only when the transfer path is concrete.
+3. If metadata is thin but the title directly names a core profile construct, keep the paper and write conservatively: state that the match is title-based, avoid mechanism-level claims, and use confidence for topical relevance rather than proven usefulness.
+
+## Report Format
+
+Use these sections by default unless the user asks for a different structure:
 
 ```markdown
 # Weekly Research Report - [run_id or date]
 
 ## 我最关心的问题是否有新的研究进展
 
-### 问题1：xxx
-
-### 问题2：xxx
-
-### 问题3：xxx
-
 ## 我正在做的研究是否有新的研究进展
 
-### 研究一：xxx
-
-### 研究二：xxx
-
-### 研究三：xxx
-
 ## 我感兴趣领域的新进展
-
 
 ## 值得特别注意的论文
 
 ## 本周建议跟进
 ```
 
-Each paper entry should include:
-- title
-- source/journal
-- URL
-- why it may matter, tied to a specific user research line and explicitly based on title/abstract evidence
-- confidence: `high`, `medium`, or `low`
+Derive subsection names from the maintained profile's current research lines and ongoing projects. 
 
-Do not overclaim. Treat the report as title/abstract triage. Do not fabricate details beyond the title/author/abstract metadata.
+Default report length should be concise: target 12-18 papers total. If the run is unusually rich, exceed this only for clearly high-value papers.
 
-## Ranking Principles
+- Main research-question sections: usually 3-6 papers each.
+- Surprising or adjacent section: usually 2-4 papers.
+- Follow-up section: short action list, not another full paper list.
 
-Prioritize papers by semantic fit to the research profile, not by matching a keyword list. A strong candidate should satisfy at least one of these conditions:
+Each included paper should have:
+- one compact identification line: title, source/journal, URL
+- one reason line: evidence cue plus profile bridge
+- one confidence line: `high`, `medium`, or `low`
 
-- It directly addresses a core research line, current project, or transfer interest in the profile.
-- It offers a method, modeling idea, dataset type, or evaluation perspective that could plausibly migrate into the user's research.
-- It bridges measurement, psychometrics, psychology, education, or mental health with modern AI/ML in a way the user might miss during routine journal scanning.
-
-The report should only say that title/abstract metadata makes a paper look relevant. Do not claim what the full paper proves.
-
-## Screening Discipline
-
-1. Start from RSS metadata in the JSON: `title`, `authors`, `abstract`, plus `source`, `url`, `doi`, and `published` only for identification.
-2. Read title and abstract semantically against the research profile; do not treat exact keyword matching as the main criterion.
-3. If there are many papers, batch them and keep a shortlist per batch:
-   - papers that directly match the maintained research profile
-   - papers with a clear methodological or conceptual transfer path
-   - surprising adjacent papers that the user might otherwise miss
-4. Merge the batch shortlists, remove duplicates, and group candidates according to the report structure rather than by journal.
-5. Keep weak matches out of the main sections unless there is a specific reason they may matter.
-6. Include adjacent or unexpected papers when the title/abstract suggests a real bridge to the user's research, even if they do not use the same terminology as the profile.
-7. Avoid padding the report with loosely related papers. Prefer a shorter list when each included paper can be tied to a clear title/abstract-based reason.
-8. If a paper looks highly relevant but RSS metadata is thin, list it under `本周建议跟进` with a clear reason and mark the uncertainty.
+Include authors, date, or DOI only when they help identify or prioritize the paper. The reason and evidence boundary matter more than a long metadata block.
 
 ## Output Style
 
