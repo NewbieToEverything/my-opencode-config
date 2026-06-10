@@ -1,6 +1,6 @@
 ---
 name: rss-weekly-reporter
-description: Use when the user wants a weekly research report, literature digest, RSS paper synthesis, or latest_results.json analysis for quantitative psychology, psychometrics, SEM, IRT, CDM, aberrant response detection, missing data, effect size/power analysis, depression/suicide prediction, or AI/ML/LLM transfer ideas.
+description: Use when the user wants a weekly research report, literature digest, RSS paper screening, or latest_results.json analysis based on the maintained user research profile.
 ---
 
 # RSS Weekly Reporter
@@ -12,7 +12,6 @@ Generate a weekly research report from Academic Feed Manager output, usually `st
 ## Inputs
 
 - RSS data: Default input is `storage/latest_results.json` in `/home/liyujun/projects/academic-feed-manager`. If the user gives a different run archive, use that file instead. If the user asks for the latest completed run and `latest_results.json` exists, use it directly.
-- Fetching boundary: do not run full RSS verification or fetch new publisher data unless the user explicitly asks and names target journals.
 - User research profile: read `references/user-research-profile.md` before writing the report. This is the only maintained research-interest profile. If the user's interests change, update that natural-language file rather than creating keyword lists.
 - Screening method: filter papers based on the profile using the model's semantic judgment. If the JSON contains many papers, process papers in batches using title, authors, abstract, source, URL, and date, then merge the strongest candidates across batches.
 
