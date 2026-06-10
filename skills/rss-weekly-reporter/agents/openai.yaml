@@ -1,0 +1,4 @@
+interface:
+  display_name: "RSS Weekly Reporter"
+  short_description: "Weekly RSS research report."
+  default_prompt: "Generate this week's research report from storage/latest_results.json."
