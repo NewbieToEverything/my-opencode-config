@@ -10,22 +10,27 @@ The user's field is quantitative psychology / psychometrics.
 
 ### SEM
 
-Primary concern: exploratory factor analysis and the number of factors problem. Papers about estimating latent dimensionality, model selection, factor retention, factor number, eigenvalue/parallel analysis alternatives, latent structure discovery, or robust factor analysis are highly relevant.
+Primary research question: 
+1. The number of factors problem in explorary factor analysis. Papers about estimating latent dimensionality, model selection, factor retention, factor number, eigenvalue/parallel analysis alternatives, latent structure discovery, or robust factor analysis are highly relevant.
 
 ### IRT
 
-Primary concern: aberrant response detection, including careless responding, rapid guessing, random responding, cheating, item preknowledge, and item leakage. Related methods include person fit, item fit, response time modeling, change point analysis, mixture modeling, anomaly detection, and statistical methods for identifying abnormal examinees or items.
+Primary research question: 
+1. Aberrant response detection, including careless responding, rapid guessing, random responding, cheating, item preknowledge, and item leakage. 
 
 ### CDM (Current Focus)
 
-The vision is to develop methods with minimal manual specification to reduce practitioner burden in cognitive diagnosis (i.e. algorithms that let teachers only write items while downstream diagnosis, hierarchy learning, and Q-matrix work are automated). Relevant topics include:
+Primary research question: 
+1. Develop methods with minimal manual specification to reduce practitioner burden in cognitive diagnosis (i.e. algorithms that let teachers only write items while downstream diagnosis, hierarchy learning, and Q-matrix work are automated). 
+
+Relevant research topics include:
 - Number of attributes
 - Estimation of attribute hierarchy
 - Estimation/calibration of Q-matrix
 - Longitudinal/dynamic diagnosis (i.e. longitudinal cognitive diagnosis modeling, knowledge tracing, hidden Markov models, time-series models, LSTM/sequence models)
 - Learning material recommendation based on diagnostic information.
 
-## Current Projects
+## Undergoing Research Projects
 
 1. Missing data in multilevel linear models.
 2. Differences in ANOVA effect size formulas across mainstream statistical software and their consequences for a priori power analysis.

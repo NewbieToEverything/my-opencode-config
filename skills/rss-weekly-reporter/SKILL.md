@@ -22,13 +22,26 @@ Write the weekly report in Markdown. Use these sections by default unless the us
 ```markdown
 # Weekly Research Report - [run_id or date]
 
-## 1. 我最关心的问题是否有新的研究进展
+## 我最关心的问题是否有新的研究进展
 
-## 2. 我正在做的研究是否有新的研究进展
+### 问题1：xxx
 
-## 3. 我感兴趣领域的新进展，以及可迁移到我研究中的思路
+### 问题2：xxx
 
-## 值得特别注意但容易漏看的论文
+### 问题3：xxx
+
+## 我正在做的研究是否有新的研究进展
+
+### 研究一：xxx
+
+### 研究二：xxx
+
+### 研究三：xxx
+
+## 我感兴趣领域的新进展
+
+
+## 值得特别注意的论文
 
 ## 本周建议跟进
 ```
@@ -40,7 +53,7 @@ Each paper entry should include:
 - why it may matter, tied to a specific user research line and explicitly based on title/abstract evidence
 - confidence: `high`, `medium`, or `low`
 
-Do not overclaim. Treat the report as title/abstract triage. Do not infer methods, datasets, results, or claims that are not visible in the RSS metadata.
+Do not overclaim. Treat the report as title/abstract triage. Do not fabricate details beyond the title/author/abstract metadata.
 
 ## Ranking Principles
 
@@ -57,13 +70,14 @@ The report should only say that title/abstract metadata makes a paper look relev
 1. Start from RSS metadata in the JSON: `title`, `authors`, `abstract`, plus `source`, `url`, `doi`, and `published` only for identification.
 2. Read title and abstract semantically against the research profile; do not treat exact keyword matching as the main criterion.
 3. If there are many papers, batch them and keep a shortlist per batch:
-   - direct hits for SEM/IRT/CDM/current projects
-   - AI/ML/LLM papers with a clear transfer path
+   - papers that directly match the maintained research profile
+   - papers with a clear methodological or conceptual transfer path
    - surprising adjacent papers that the user might otherwise miss
-4. Merge the batch shortlists, remove duplicates, and group candidates by the three report questions rather than by journal.
-5. Keep weak matches out of the main sections unless they offer a concrete transfer idea.
-6. Include a "surprising but relevant" paper when it bridges domains, even if it does not mention SEM/IRT/CDM directly.
-7. Prefer fewer, better annotated papers over a long undifferentiated list.
+4. Merge the batch shortlists, remove duplicates, and group candidates according to the report structure rather than by journal.
+5. Keep weak matches out of the main sections unless there is a specific reason they may matter.
+6. Include adjacent or unexpected papers when the title/abstract suggests a real bridge to the user's research, even if they do not use the same terminology as the profile.
+7. Avoid padding the report with loosely related papers. Prefer a shorter list when each included paper can be tied to a clear title/abstract-based reason.
+8. If a paper looks highly relevant but RSS metadata is thin, list it under `本周建议跟进` with a clear reason and mark the uncertainty.
 
 ## Output Style
 
@@ -74,7 +88,3 @@ Good reason:
 
 Weak reason:
 > 这篇文章和人工智能有关，值得关注。
-
-## Follow-Up
-
-If the report reveals a paper that looks highly relevant but RSS metadata is thin, list it under `本周建议跟进` with the action: open paper page or retrieve the full text later. Do not fabricate details beyond the title/author/abstract metadata.
