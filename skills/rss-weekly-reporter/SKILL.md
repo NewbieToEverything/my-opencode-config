@@ -15,15 +15,11 @@ Default input is `storage/latest_results.json` in `/home/liyujun/projects/academ
 
 If the user gives a different run archive, use that file instead. If the user asks for the latest completed run and `latest_results.json` exists, use it directly. Do not run full RSS verification or fetch new publisher data unless the user explicitly asks and names target journals.
 
-Use `scripts/extract_candidates.py` to make a first-pass candidate list before writing:
-
-```bash
-python /home/liyujun/projects/my-opencode-config/skills/rss-weekly-reporter/scripts/extract_candidates.py storage/latest_results.json
-```
+Use the model's semantic judgment directly. Do not rely on a fixed keyword list: the user's interests are nuanced, and good matches may be phrased in unexpected ways. If the JSON contains many papers, process papers in batches using title, authors, abstract, source, URL, and date, then merge the strongest candidates across batches.
 
 ## User Research Profile
 
-Read `references/user-research-profile.md` before ranking papers. Use it as the relevance model, not as background decoration.
+Read `references/user-research-profile.md` before writing the report. This is the only maintained research-interest profile. If the user's interests change, update that natural-language file rather than creating keyword lists.
 
 Core areas:
 - Quantitative psychology / psychometrics.
@@ -80,10 +76,15 @@ Low priority signals:
 ## Screening Discipline
 
 1. Start from RSS metadata in the JSON: `title`, `authors`, `abstract`, plus `source`, `url`, `doi`, and `published` only for identification.
-2. Group candidates by the three report questions rather than by journal.
-3. Keep weak matches out of the main sections unless they offer a concrete transfer idea.
-4. Include a "surprising but relevant" paper when it bridges domains, even if it does not mention SEM/IRT/CDM directly.
-5. Prefer fewer, better annotated papers over a long undifferentiated list.
+2. Read title and abstract semantically against the research profile; do not treat exact keyword matching as the main criterion.
+3. If there are many papers, batch them and keep a shortlist per batch:
+   - direct hits for SEM/IRT/CDM/current projects
+   - AI/ML/LLM papers with a clear transfer path
+   - surprising adjacent papers that the user might otherwise miss
+4. Merge the batch shortlists, remove duplicates, and group candidates by the three report questions rather than by journal.
+5. Keep weak matches out of the main sections unless they offer a concrete transfer idea.
+6. Include a "surprising but relevant" paper when it bridges domains, even if it does not mention SEM/IRT/CDM directly.
+7. Prefer fewer, better annotated papers over a long undifferentiated list.
 
 ## Output Style
 
