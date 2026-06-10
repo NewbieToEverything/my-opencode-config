@@ -32,8 +32,9 @@ Generate a weekly research report from Academic Feed Manager output, usually `st
 	- Tier 2: Concrete transfer hit. Include when title or abstract shows a clear method, data, modeling, or evaluation bridge to the profile.
 	- Tier 3: Interesting but remote. Usually omit. If included, keep it short, mark low confidence, and place it under the surprising or follow-up section.
 2. Do not let a remote but interesting paper displace a direct profile hit. When two papers are equally relevant, prefer the one with clearer RSS evidence.
-3. If a section has no strong hit, say that directly instead of filling it with weak papers.
-4. Include adjacent or unexpected papers only when the title or abstract shows a real bridge to the user's research. Avoid broad analogies where the connection depends on saying that an abstract method "resembles" a latent state, diagnosis, or measurement problem. If the bridge requires more than two inference steps, omit it or keep it as a low-confidence follow-up note.
+3. Direct profile hits take priority even when metadata is thin. Do not let adjacent-method or transfer-interest papers crowd out direct matches to the profile's research lines or ongoing projects.
+4. If a section has no strong hit, say that directly instead of filling it with weak papers.
+5. Include adjacent or unexpected papers only when the title or abstract shows a real bridge to the user's research. Avoid broad analogies where the connection depends on saying that an abstract method "resembles" a latent state, diagnosis, or measurement problem. If the bridge requires more than two inference steps, omit it or keep it as a low-confidence follow-up note.
 
 ## Evidence Boundary
 
@@ -42,7 +43,8 @@ Generate a weekly research report from Academic Feed Manager output, usually `st
 	- Use "题名直接显示..." when only the title supports the match.
 	- Use "RSS 摘要显示..." when the abstract supports the match.
 	- Use "可能迁移到..." only when the transfer path is concrete.
-3. If metadata is thin but the title directly names a core profile construct, keep the paper and write conservatively: state that the match is title-based, avoid mechanism-level claims, and use confidence for topical relevance rather than proven usefulness.
+3. Treat abstracts that only contain publication metadata such as `Publication date`, `Source`, or `Author(s)` as having no substantive abstract. In that case, do not write "RSS 摘要显示"; use "题名直接显示..." instead.
+4. If metadata is thin but the title directly names a core profile construct, keep the paper and write conservatively: state that the match is title-based, avoid mechanism-level claims, and use confidence for topical relevance rather than proven usefulness.
 
 ## Report Format
 
@@ -63,6 +65,8 @@ Use these sections by default unless the user asks for a different structure:
 ```
 
 Derive subsection names from the maintained profile's current research lines and ongoing projects. 
+
+Coverage is required even when the report is concise. Check each research line and ongoing project in the maintained profile. If there is no strong direct hit for one of them, say so briefly instead of silently omitting it.
 
 Default report length should be concise: target 12-18 papers total. If the run is unusually rich, exceed this only for clearly high-value papers.
 
