@@ -1,6 +1,6 @@
 # User Research Profile
 
-Use this profile to rank RSS metadata. The weekly report is a title/author/abstract screening report, not a full-text review.
+Use this profile to rank RSS metadata.
 
 ## Core Field
 
@@ -12,20 +12,18 @@ The user's field is quantitative psychology / psychometrics.
 
 Primary concern: exploratory factor analysis and the number of factors problem. Papers about estimating latent dimensionality, model selection, factor retention, factor number, eigenvalue/parallel analysis alternatives, latent structure discovery, or robust factor analysis are highly relevant.
 
-### IRT and Response Behavior
+### IRT
 
 Primary concern: aberrant response detection, including careless responding, rapid guessing, random responding, cheating, item preknowledge, and item leakage. Related methods include person fit, item fit, response time modeling, change point analysis, mixture modeling, anomaly detection, and statistical methods for identifying abnormal examinees or items.
 
-### CDM as Current Center
+### CDM (Current Focus)
 
-Highly relevant themes:
-- Reducing practitioner burden in cognitive diagnosis.
-- Estimating the number of attributes.
-- Estimating attribute hierarchy from data.
-- Diagnosing examinees and calibrating Q-matrices with minimal manual specification.
-- Algorithms that let teachers only write items while downstream diagnosis, hierarchy learning, and Q-matrix work are automated.
-- Longitudinal cognitive diagnosis, knowledge tracing, hidden Markov models, time-series models, LSTM/sequence models, and modeling changes in attribute mastery over time.
-- Learning material recommendation based on diagnostic information, especially hierarchical or multi-level reinforcement learning.
+The vision is to develop methods with minimal manual specification to reduce practitioner burden in cognitive diagnosis (i.e. algorithms that let teachers only write items while downstream diagnosis, hierarchy learning, and Q-matrix work are automated). Relevant topics include:
+- Number of attributes
+- Estimation of attribute hierarchy
+- Estimation/calibration of Q-matrix
+- Longitudinal/dynamic diagnosis (i.e. longitudinal cognitive diagnosis modeling, knowledge tracing, hidden Markov models, time-series models, LSTM/sequence models)
+- Learning material recommendation based on diagnostic information.
 
 ## Current Projects
 
@@ -35,15 +33,16 @@ Highly relevant themes:
 
 ## Transfer Interests
 
-The user is strongly interested in AI, machine learning, reinforcement learning, transformers, and LLMs, but only wants them foregrounded when there is a concrete path back to the research lines above.
+The user is strongly interested in AI, machine learning, reinforcement learning, transformers, and LLMs. These papers should be foregrounded when the title/abstract suggests a concrete route back to the research lines or current projects above.
 
-High-value transfer patterns:
-- Transformer/sequence models for multilevel missing data, longitudinal CDM, knowledge tracing, or mental health prediction.
-- Reinforcement learning for adaptive learning material recommendation.
-- LLMs as predictors, feature extractors, measurement tools, or assistants for psychological/educational assessment.
-- Representation learning for latent attributes, latent traits, item/examinee embeddings, or diagnostic states.
-- Anomaly detection methods that could transfer to aberrant response detection.
+Use the following as examples, not exhaustive criteria:
+- Sequence, transformer, or representation-learning methods that may help model longitudinal change, missing data, knowledge tracing, mental health prediction, or latent diagnostic states.
+- Reinforcement learning or adaptive decision-making methods that may inform learning material recommendation or educational intervention.
+- LLMs used as predictors, feature extractors, measurement tools, simulation tools, or assistants for psychological and educational assessment.
+- Methods for latent structure discovery, embeddings, anomaly detection, uncertainty estimation, or model evaluation that may transfer to SEM, IRT, CDM, aberrant response detection, or current projects.
+
+Do not require exact overlap with these examples. If a paper suggests a plausible new bridge between AI/ML and the user's research, include it with a clear explanation of the transfer path.
 
 ## Surprising but Relevant Papers
 
-Surface papers that bridge psychometrics, psychological measurement, educational measurement, latent variables, assessment, or mental health with modern AI/ML/LLMs even when they appear in broad or adjacent venues. These papers should appear in the report when the title/abstract suggests a real connection to the user's research, because they are easy to miss in routine journal scanning.
+Surface papers that bridge psychometrics, psychological measurement, educational measurement, latent variables, assessment, or mental health with modern AI/ML/LLMs, especially when they appear in broad or adjacent venues. High-impact or wide-readership venues can increase priority, but venue alone is not required. Include these papers when the title/abstract suggests a real connection to the user's research.
