@@ -7,7 +7,7 @@ description: Use when the user wants a weekly research report, literature digest
 
 ## Overview
 
-Generate a weekly research report from Academic Feed Manager output, usually `storage/latest_results.json`. The report is a screening tool based only on RSS metadata, especially title, authors, and abstract. Its purpose is to identify which new papers the user should consider opening and reading later, not to summarize full-text findings.
+Generate a weekly research report from Academic Feed Manager output, usually `storage/latest_results.json`. The report is a screening tool based only on RSS metadata, especially title, authors, and abstract. Its purpose is to identify which new papers the user should consider opening and reading later, not to summarize full-text findings. The report must be written in Chinese.
 
 ## Inputs
 
@@ -53,11 +53,11 @@ Use these sections by default unless the user asks for a different structure:
 ```markdown
 # Weekly Research Report - [run_id or date]
 
-## 我最关心的问题是否有新的研究进展
+## 最关心的问题是否有新进展
 
-## 我正在做的研究是否有新的研究进展
+## 正在做的研究是否有新进展
 
-## 我感兴趣领域的新进展
+## 感兴趣领域的新进展
 
 ## 值得特别注意的论文
 
@@ -68,18 +68,26 @@ Derive subsection names from the maintained profile's current research lines and
 
 Coverage is required even when the report is concise. Check each research line and ongoing project in the maintained profile. If there is no strong direct hit for one of them, say so briefly instead of silently omitting it.
 
-Default report length should be concise: target 12-18 papers total. If the run is unusually rich, exceed this only for clearly high-value papers.
+Default report length should be concise: target 12-18 papers for a 7-day window, and scale proportionally for longer windows (e.g. ~25-35 for 14 days, ~50-80 for 30 days). If the run is unusually rich, exceed this only for clearly high-value papers.
 
 - Main research-question sections: usually 3-6 papers each.
 - Surprising or adjacent section: usually 2-4 papers.
 - Follow-up section: short action list, not another full paper list.
 
-Each included paper should have:
-- one compact identification line: title, source/journal, URL
-- one reason line: evidence cue plus profile bridge
-- one confidence line: `high`, `medium`, or `low`
+Each paper entry must follow this exact Markdown format:
+
+```markdown
+**论文标题**
+来源全称 | 完整URL地址
+- RSS 摘要/分析要点
+- 置信度：**high/medium/low**
+```
+
+Do not merge the title, source, and URL into one line. Keep title as `**bold**` on its own line. The URL must be after ` | ` on the source line. Reason and confidence must be `- ` bullet items.
 
 Include authors, date, or DOI only when they help identify or prioritize the paper. The reason and evidence boundary matter more than a long metadata block.
+
+在"本周建议跟进"和"值得特别注意的论文"段，引用已在前文分析的论文时使用 `[论文标题](URL)` 格式，确保标题可点击。
 
 ## Output Style
 
