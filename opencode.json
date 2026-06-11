@@ -110,6 +110,23 @@
           }
         }
       }
+    },
+    "llama-cpp-gemma4-26b-qat": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (Gemma 4 26B-A4B QAT)",
+      "options": {
+        "baseURL": "http://localhost:8087/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf": {
+          "name": "gemma4-26b-qat",
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        }
+      }
     }
   }
 }
