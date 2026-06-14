@@ -5,12 +5,13 @@ description: Docker镜像构建、模型下载、部署全流程
 
 ## 必须遵守
 - 必须使用 `docker compose`（不是 `docker run`）
-- 容器名：必须使用小写字母+短横线
-- `image` 参数：所有自定义镜像必须在 `docker-compose.yml` 中显式指定 `image:`
-- 健康检查：所有服务必须配置 `healthcheck`
-- 重启策略：所有服务必须配置 `restart` 策略（除非有明确理由不需要）
-- 若有项目目录，必须显式挂载
-- 若有环境变量文件，必须显式挂载
+- `container_name`：必须使用小写字母+短横线
+- `image`：所有自定义镜像必须在 `docker-compose.yml` 中显式指定镜像名
+- `healthcheck`：所有服务必须配置
+- `restart`：所有服务必须配置（除非有明确理由不需要）
+- `volume`：若有以下内容，必须显示挂载
+  - 项目目录
+  - 环境变量文件
 
 ## 第一步：前期工作
 ### 依赖检查
@@ -18,22 +19,27 @@ description: Docker镜像构建、模型下载、部署全流程
 - 磁盘空间充足
 - 如果容器需要使用显卡，需确认 NVIDIA Driver 和 nvidia-container-toolkit 已安装
 
-
 ### 选择基础镜像
 - 分析容器的用途
-- 根据用途查询本地已有镜像：`docker images`，若已有满足需求的镜像，直接复用
-- 若无本地可用镜像，再搜索合适的远程基础镜像，优先使用官方维护的
+- 根据用途查询本地已有镜像，若已有满足用途的镜像，直接复用；若无本地可用镜像，再搜索合适的远程基础镜像（官方维护的优先）
 - 如果需要使用 CUDA，需检查：
   1. 基础镜像的 CUDA 版本与宿主机 NVIDIA Driver 的兼容性
-  2. 框架（如 PyTorch、TensorFlow、vLLM 等）版本与 GPU  compute capability（架构代次，如 sm_90/sm_120）的兼容性
+  2. 框架（如 PyTorch、TensorFlow、vLLM 等）版本与宿主机 GPU compute capability（架构代次，如 sm_90/sm_120）的兼容性
 
 ### 冲突检测
 - 检查备选端口是否被占用
-- 检查备选容器名是否已存在
-- 若自定义镜像，检查备选镜像名是否已存在
-- 检查 GPU 是否被其他容器占用：`nvidia-smi` 查看显存使用
+- 检查备选 `container_name` 是否已存在
+- 若自定义镜像，检查备选 `image` 是否已存在
+- 检查 GPU 是否被其他容器占用
 
 ### 下载
+#### 代理
+Docker 的代理分两层：
+| 阶段 | 走不走代理 | 配置方式 |
+|------|-----------|---------|
+| `docker pull` 拉取镜像 | 走 daemon 代理 | 配置 `/etc/systemd/system/docker.service.d/proxy.conf` |
+| `apt`/`pip`/`curl` 等 build 时网络请求 | 不走 daemon 代理 | `network: host` + build args `HTTP_PROXY`/`HTTPS_PROXY`|
+
 #### docker 国内镜像源
 - **Docker镜像源配置**：使用 `docker pull` 下载基础镜像前，需先配置国内 docker 镜像源。在 `/etc/docker/daemon.json` 中配置多个镜像源以提升可移植性和稳定性：
   ```json
@@ -48,17 +54,10 @@ description: Docker镜像构建、模型下载、部署全流程
   }
   ```
   配置后执行 `sudo systemctl daemon-reload && sudo systemctl restart docker` 使其生效。
-- 超时直接重试，直到下载完毕。若基础镜像大于 200MB，设定最长等待时间（如 10-15 分钟），超时后继续重试直到下载完成。只有当下载速度稳定低于 50 kb/s 时终止下载，寻找其他解决方案并告知用户。
+- 超时直接重试，直到下载完毕。
+- 只有当下载速度稳定低于 50 kb/s 时终止下载，寻找其他解决方案并告知用户。
 - 若多次重试仍卡在同一层，放弃该基础镜像，改用纯净的基础镜像（只有基本的 Linux 系统） + pip 安装框架
-- 如需使用 GPU，基础镜像下载完毕后需验证 GPU 可透传到容器，若看不到设备，需排查 nvidia-container-toolkit 配置：
-  `docker run --rm --gpus all <基础镜像> ls /dev/nvidia*`
-
-#### 代理
-Docker 的代理分两层，必须分别处理：
-| 阶段 | 走不走代理 | 配置方式 |
-|------|-----------|---------|
-| `docker pull` 拉取镜像 | 走 daemon 代理 | 配置 `/etc/systemd/system/docker.service.d/proxy.conf` |
-| `apt`/`pip`/`curl` 等 build 时网络请求 | 不走 daemon 代理 | `network: host` + build args `HTTP_PROXY`/`HTTPS_PROXY`|
+- 如需使用 GPU，基础镜像下载完毕后需验证 GPU 可透传到容器，`docker run --rm --gpus all <基础镜像> ls /dev/nvidia*`
 
 ## 第二步：创建 docker-compose.yml 和 dockerfile
 ### dockerfile
@@ -99,7 +98,6 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 3. 需要运行 `apt-get` 的步骤，必须切换至 root 用户，完成后切回第 2 步中确认的镜像用户（`<默认用户>`或者定义的`<用户名>`）
 4. 禁止在 `apt-get` 后使用 `chown` 修改默认用户的主目录，除非确认目标组存在
 
-
 ### docker-compose.yml
 #### 用户
 检查宿主机的用户 `UID/GID：id -u && id -g`，使用 `-u "xxxx:xxxx"` 命令来匹配查询结果
@@ -121,19 +119,15 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
     - NVIDIA_DRIVER_CAPABILITIES=compute,utility
   ```
 
-#### 可执行文件挂载
-- 若容器的目的是提供 CLI 工具但又不希望通过 npm 安装该工具，可将该工具的二进制文件和运行必备文件下载到宿主机，通过 bind mount 挂载进容器，方便在不 rebuild 容器的情况下升级工具
-
 ### 第三步：构建镜像
 - **Cache 策略**：
   - 调整 dockerfile 代码后重新 build 必须使用 `--no-cache`
   - 需要重新 build 来更新镜像的依赖源（apt-get update）时，必须使用 `--no-cache`
   - 因超时等原因重试失败的 build（未修改代码）→ 使用 cache（利用已有层加速构建）
-  - 失败不要全部重来，阶段 Dockerfile 改最后几层用缓存即可，不需要 `--no-cache` 全部重来
+  - 失败不要需要 `--no-cache` 全部重来，阶段 Dockerfile 改最后几层用缓存即可
 - 调试构建步骤：`docker compose build --progress=plain`
 - 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位。构建成功后若日志无异常，应删除或移出项目目录（如 `/tmp/`），避免污染项目文件
 - 先诊断再换源 — 安装失败时先 `curl -v` 确认目标源是否可达，不要直接切换源或改版本号
-
 
 ## 第四步：VS Code Dev Container 配置
 ### 方案选择
