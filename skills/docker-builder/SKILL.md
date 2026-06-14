@@ -21,7 +21,8 @@ description: Docker镜像构建、模型下载、部署全流程
 
 ### 选择基础镜像
 - 分析容器的用途
-- 根据用途查询本地已有镜像，若已有满足用途的镜像，直接复用；若无本地可用镜像，再搜索合适的远程基础镜像（官方维护的优先）
+- 根据用途查询本地已有镜像（技能路径下的`assets\created-images-containers.md`）
+，若已有满足用途的镜像，直接复用；若无本地可用镜像，再搜索合适的远程基础镜像（官方维护的优先）
 - 如果需要使用 CUDA，需检查：
   1. 基础镜像的 CUDA 版本与宿主机 NVIDIA Driver 的兼容性
   2. 框架（如 PyTorch、TensorFlow、vLLM 等）版本与宿主机 GPU compute capability（架构代次，如 sm_90/sm_120）的兼容性
@@ -165,6 +166,9 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   - 通用容器：`docker exec 容器名 nvidia-smi`
   - 使用了框架的容器：需采用框架特定的命令，如 PyTorch 容器采用 `docker exec 容器名 python3 -c "import torch; print(torch.cuda.is_available())"`
 - 若验证失败，检查环境变量 `docker exec 容器名 env | grep NVIDIA`
+
+## 第六步：更新记录
+若容器配置完毕，更新技能路径下的`assets\created-images-containers.md`
 
 ## 特定用途容器的配置细节
 根据需要读取本 skill 目录下的相应文件
