@@ -19,6 +19,10 @@
       "models": {
         "gpt-oss-20b-Q4_K_M.gguf": {
           "name": "gpt-oss-20b",
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 131072,
             "output": 8192
@@ -36,6 +40,10 @@
       "models": {
         "gpt-oss-120b-mxfp4-00001-of-00003.gguf": {
           "name": "gpt-oss-120b",
+          "modalities": {
+            "input": ["text"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 131072,
             "output": 8192
@@ -53,6 +61,10 @@
       "models": {
         "Qwen3.5-35B-A3B-Q4_K_M.gguf": {
           "name": "qwen35-35b-a3b",
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 262144,
             "output": 8192
@@ -64,12 +76,16 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "llama.cpp (Qwen3.6 35B-A3B)",
       "options": {
-        "baseURL": "http://localhost:8084/v1",
+        "baseURL": "http://localhost:8085/v1",
         "apiKey": "anything"
       },
       "models": {
         "Qwen3.6-35B-A3B-Q4_K_M.gguf": {
           "name": "qwen36-35b-a3b",
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 262144,
             "output": 8192
@@ -81,12 +97,16 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "llama.cpp (Gemma 4 26B-A4B)",
       "options": {
-        "baseURL": "http://localhost:8085/v1",
+        "baseURL": "http://localhost:8087/v1",
         "apiKey": "anything"
       },
       "models": {
         "gemma-4-26B-A4B-it-Q4_K_M.gguf": {
           "name": "gemma4-26b-a4b",
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 262144,
             "output": 8192
@@ -104,6 +124,10 @@
       "models": {
         "gemma-4-12b-it-Q4_K_M.gguf": {
           "name": "gemma-4-12b",
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 131072,
             "output": 8192
@@ -115,12 +139,37 @@
       "npm": "@ai-sdk/openai-compatible",
       "name": "llama.cpp (Gemma 4 26B-A4B QAT)",
       "options": {
-        "baseURL": "http://localhost:8087/v1",
+        "baseURL": "http://localhost:8088/v1",
         "apiKey": "anything"
       },
       "models": {
         "gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf": {
           "name": "gemma4-26b-qat",
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
+          "limit": {
+            "context": 262144,
+            "output": 8192
+          }
+        }
+      }
+    },
+    "llama-cpp-agentworld-35b": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "llama.cpp (Qwen-AgentWorld 35B-A3B)",
+      "options": {
+        "baseURL": "http://localhost:8084/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "Qwen-AgentWorld-35B-A3B-Q4_K_M.gguf": {
+          "name": "agentworld-35b",
+          "modalities": {
+            "input": ["text", "image"],
+            "output": ["text"]
+          },
           "limit": {
             "context": 262144,
             "output": 8192
