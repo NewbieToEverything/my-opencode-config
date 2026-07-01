@@ -44,11 +44,10 @@ RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
 
 ### 当预编译包不够用时
 
-不在 `r-cran-*` 列表中的包（如 `miceadds`）需从 CRAN 安装。安装后立即用 `library()` 验证：
+不在 `r-cran-*` 列表中的包（如 `miceadds`）需从 CRAN 安装：
 
 ```dockerfile
-RUN R -e "install.packages('miceadds', repos='https://mirrors.tuna.tsinghua.edu.cn/CRAN'); \
-           stopifnot(require('miceadds', character.only=TRUE))"
+RUN R -e "install.packages('miceadds', repos='https://mirrors.tuna.tsinghua.edu.cn/CRAN')"
 ```
 
 `miceadds` 含 C++ 代码，需要编译，编译依赖见路径三。
@@ -65,8 +64,7 @@ RSPM（RStudio Package Manager）是一个提供预编译 CRAN 包的服务，�
 
 ```dockerfile
 RUN R -e "install.packages('pkg', \
-    repos='https://packagemanager.rstudio.com/all/__linux__/jammy/latest'); \
-    stopifnot(require('pkg', character.only=TRUE))"
+    repos='https://packagemanager.rstudio.com/all/__linux__/jammy/latest')"
 ```
 
 **速度**：几分钟（二进制下载），不需要系统 dev 包。
@@ -88,6 +86,19 @@ curl -v https://packagemanager.rstudio.com/all/__linux__/jammy/latest
 **适用场景**：系统包管理器和 RSPM 都没有目标包。
 
 **速度**：15 分钟以上（100+ 包）。**失败重来代价高**——`docker compose build --no-cache` 后所有包重新编译。先在小范围验证依赖版本无误，再跑完整 Dockerfile。
+
+### 超时与并行
+
+R 默认下载超时可能不足，低速链路会导致后续依赖级联失败。源码安装前统一设置：
+
+```r
+options(
+  timeout = 600,
+  Ncpus = max(1L, parallel::detectCores() - 1L)
+)
+```
+
+失败时先定位日志中的第一条错误。若首错是下载超时，应调整网络或 `timeout`，不要逐个处理后续失败包。
 
 ### 必备系统 dev 库
 
@@ -135,8 +146,7 @@ RUN echo 'options(repos=c(CRAN="https://mirrors.tuna.tsinghua.edu.cn/CRAN"))' \
 RUN R -e "install.packages('pkg', repos='...', \
     dependencies=FALSE, \
     lib=file.path(Sys.getenv('R_HOME'), 'library'), \
-    INSTALL_opts='--no-data --no-help --no-demo --no-html --no-docs --no-multiarch --clean'); \
-    stopifnot(require('pkg', character.only=TRUE))"
+    INSTALL_opts='--no-data --no-help --no-demo --no-html --no-docs --no-multiarch --clean')"
 ```
 
 `dependencies=FALSE` 只装直接依赖，`INSTALL_opts` 跳过文档和数据。
@@ -146,3 +156,10 @@ RUN R -e "install.packages('pkg', repos='...', \
 ## 各路径通用验证
 
 `install.packages()` 失败时仅打印 warning，`R -e` 仍返回 exit code 0。**必须主动验证**包可加载，否则构建不报错但最终镜像缺包。
+
+```r
+missing <- packages[
+  !vapply(packages, requireNamespace, logical(1), quietly = TRUE)
+]
+if (length(missing)) stop("Missing packages: ", paste(missing, collapse = ", "))
+```
