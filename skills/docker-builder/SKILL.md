@@ -126,39 +126,50 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   - 需要重新 build 来更新镜像的依赖源（apt-get update）时，必须使用 `--no-cache`
   - 因超时等原因重试失败的 build（未修改代码）→ 使用 cache（利用已有层加速构建）
   - 失败后不需要 `--no-cache` 全部重来，只改 Dockerfile 末尾几层，利用缓存加速后续构建
+  - 缓存从变更层开始向后失效；Dockerfile 按“稳定且昂贵的依赖在前，频繁变化的内容在后”排序
+  - 重建大依赖层前，根据依赖体积、网络速度和剩余磁盘估算成本并告知用户；不得因构建耗时擅自更换依赖或运行模式
 - 调试构建步骤：`docker compose build --progress=plain`
 - 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位。构建成功后若日志无异常，应删除或移出项目目录（如 `/tmp/`），避免污染项目文件
+- 长时间构建使用可持续读取退出状态的前台会话；日志停止刷新或达到显示上限，不等于构建失败
+- 代理只作为临时 build args 传入，不写入镜像 `ENV` 或项目配置；构建后检查容器运行环境无代理残留
 - 先诊断再换源 — 安装失败时先 `curl -v` 确认目标源是否可达，不要直接切换源或改版本号
 
 ## 第四步：VS Code Dev Container 配置
-### 方案选择
-- 已有容器只需要编辑/查看文件：使用 Attach Shell 模式（优先）
-- 需要 VS Code 自动安装扩展、自动打开工作区：使用完整 Dev Container 配置
+必须提供完整的声明式配置，使 VS Code 自动启动 Compose 服务、打开工作区并安装扩展。不得将 Attach Shell 或手动安装扩展作为交付方案。
 
-### Attach Shell 配置
-- 在项目根目录创建 `.devcontainer/devcontainer.json`：
-  ```json
-  {
-    "name": "容器名",
-    "containerId": "容器名",
-    "attachedWorkspaceFolder": "/工作目录"
+在项目根目录创建 `.devcontainer/devcontainer.json`：
+
+```json
+{
+  "name": "<project-name>",
+  "dockerComposeFile": "../docker-compose.yml",
+  "service": "<compose-service>",
+  "workspaceFolder": "<container-workspace-path>",
+  "shutdownAction": "stopCompose",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "<publisher.extension-id>"
+      ]
+    }
   }
-  ```
-- 暴露端口在 `docker-compose.yml` 的 `ports` 中配置，不在 Dev Container 配置中配置
+}
+```
 
-### 扩展安装与持久化
-- 扩展安装：Attach Shell 连接后，在 Extensions 面板点击 "Install in Container"
-- 扩展存储位置：容器内 `~/.vscode-server/extensions/`
-- 持久化方式（二选一）：
-  - 在 dockerfile 中预装（需 base image 包含 VS Code Server）
-  - 将 `~/.vscode-server/extensions/` 挂载为 volume
-- 容器重建后未持久化的扩展会丢失，需重新安装
+规则：
+- `service` 必须对应 Compose 服务，`workspaceFolder` 必须对应项目卷的容器内路径
+- 项目所需扩展全部写入 `customizations.vscode.extensions`，容器创建时由 VS Code 自动安装
+- 扩展依赖的运行时、CLI 或语言服务必须在镜像构建阶段安装，不能依赖用户进入 shell 安装
+- 端口、卷、环境变量和 GPU 仍由 `docker-compose.yml` 管理
+- 仅在必要时添加 `postCreateCommand`，且只能执行快速、幂等的初始化或验证，不安装大依赖
+- 完成后检查 JSON 语法、执行 `docker compose config --quiet`，并验证扩展依赖的容器端能力
 
 ## 第五步：验证与更新记录
 ### 构建验证
 - `docker compose ps` 显示 running
 - 日志中无 ERROR
-- 运行核心命令确认功能正常（如 `docker exec cacti python3 -c "import torch; print(torch.cuda.is_available())"`）
+- 验证必须覆盖项目的真实最小工作流，而不只是执行版本命令
+- 按项目实际能力验证：容器健康、扩展后端或语言服务可加载、代表性输入能生成预期输出、硬件加速可被框架使用
 
 ### GPU 验证
 如果需要使用 GPU,在容器启动后做如下验证：
