@@ -122,12 +122,11 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 
 ### 第三步：构建镜像
 - **Cache 策略**：
-  - 调整 dockerfile 代码后重新 build 必须使用 `--no-cache`
-  - 需要重新 build 来更新镜像的依赖源（apt-get update）时，必须使用 `--no-cache`
-  - 因超时等原因重试失败的 build（未修改代码）→ 使用 cache（利用已有层加速构建）
-  - 失败后不需要 `--no-cache` 全部重来，只改 Dockerfile 末尾几层，利用缓存加速后续构建
-  - 缓存从变更层开始向后失效；Dockerfile 按“稳定且昂贵的依赖在前，频繁变化的内容在后”排序
-  - 重建大依赖层前，根据依赖体积、网络速度和剩余磁盘估算成本并告知用户；不得因构建耗时擅自更换依赖或运行模式
+  - Dockerfile 或依赖清单已修改：正常构建，Docker 会从变更层开始自动失效缓存
+  - 远程输入已变化但构建文件未变、缓存疑似异常或需要全量验证：使用 `--no-cache`；基础镜像标签可能变化时同时使用 `--pull`
+  - 下载量超过 500 MB 或清洁构建超过 5 分钟的依赖单独成层，并按清单变更频率从低到高排列
+  - 独立的高成本依赖栈使用独立阶段、预构建基础镜像或 BuildKit cache mount，避免一个依赖栈变化导致其他依赖重新下载
+  - 重建高成本层前估算时间和磁盘增量并告知用户；不得因耗时擅自更换依赖或运行模式
 - 调试构建步骤：`docker compose build --progress=plain`
 - 构建命令保留 log：`2>&1 | tee build.log`，失败时方便定位。构建成功后若日志无异常，应删除或移出项目目录（如 `/tmp/`），避免污染项目文件
 - 长时间构建使用可持续读取退出状态的前台会话；日志停止刷新或达到显示上限，不等于构建失败
@@ -162,6 +161,8 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 - 扩展依赖的运行时、CLI 或语言服务必须在镜像构建阶段安装，不能依赖用户进入 shell 安装
 - 端口、卷、环境变量和 GPU 仍由 `docker-compose.yml` 管理
 - 仅在必要时添加 `postCreateCommand`，且只能执行快速、幂等的初始化或验证，不安装大依赖
+- 首次使用或修改 `.devcontainer` 后必须执行 **Dev Containers: Rebuild and Reopen in Container**；**Attach to Running Container** 不会应用项目的扩展清单
+- 自动打开工作区不能证明配置已生效；还需确认容器具有 Dev Container 配置标签，并检查容器端扩展列表
 - 完成后检查 JSON 语法、执行 `docker compose config --quiet`，并验证扩展依赖的容器端能力
 
 ## 第五步：验证与更新记录
