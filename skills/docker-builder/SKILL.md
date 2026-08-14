@@ -134,7 +134,7 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 - 先诊断再换源 — 安装失败时先 `curl -v` 确认目标源是否可达，不要直接切换源或改版本号
 
 ## 第四步：VS Code Dev Container 配置
-必须提供完整的声明式配置，使 VS Code 自动启动 Compose 服务、打开工作区并安装扩展。不得将 Attach Shell 或手动安装扩展作为交付方案。
+必须提供完整的声明式配置，使 VS Code 自动启动 Compose 服务、打开工作区并安装扩展。**禁止**将 Attach Shell 或手动安装扩展作为交付方案。
 
 在项目根目录创建 `.devcontainer/devcontainer.json`：
 
@@ -157,13 +157,11 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 
 规则：
 - `service` 必须对应 Compose 服务，`workspaceFolder` 必须对应项目卷的容器内路径
-- 项目所需扩展全部写入 `customizations.vscode.extensions`，容器创建时由 VS Code 自动安装
-- 扩展依赖的运行时、CLI 或语言服务必须在镜像构建阶段安装，不能依赖用户进入 shell 安装
-- 端口、卷、环境变量和 GPU 仍由 `docker-compose.yml` 管理
+- 项目所需扩展全部写入 `customizations.vscode.extensions`
+- 新增扩展前检查官方 Marketplace/仓库中的 `extensionDependencies`、`extensionPack` 和功能要求，递归补齐扩展依赖
+- 同时检查扩展所需的 CLI、语言服务、内核和运行时包；一次性写入 Dev Container 与镜像依赖后再重建镜像
 - 仅在必要时添加 `postCreateCommand`，且只能执行快速、幂等的初始化或验证，不安装大依赖
-- 首次使用或修改 `.devcontainer` 后必须执行 **Dev Containers: Rebuild and Reopen in Container**；**Attach to Running Container** 不会应用项目的扩展清单
-- 自动打开工作区不能证明配置已生效；还需确认容器具有 Dev Container 配置标签，并检查容器端扩展列表
-- 完成后检查 JSON 语法、执行 `docker compose config --quiet`，并验证扩展依赖的容器端能力
+- **验证**：完成后检查 JSON 语法、执行 `docker compose config --quiet`，确认容器具有 Dev Container 配置标签，并检查容器端扩展列表
 
 ## 第五步：验证与更新记录
 ### 构建验证
