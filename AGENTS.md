@@ -14,7 +14,9 @@
 	- 用户隐私信息：包括但不限于用户名、密码、令牌、API 密钥、邮箱、SSH 私钥、会话 cookie、数据库连接串、JWT Secret、加密盐值、云服务 Access Key ID
 - 自定义全局 skill **必须**放在 `~/projects/my-opencode-config/skills`
 - 回复、写作都**必须**言简意赅；执行过命令、测试或修改文件时，必须说明关键结果
+- Markdown 公式**必须**使用 `$...$` 表示行内公式、使用 `$$...$$` 表示行间公式；禁止使用 `\(...\)` 或 `\[...\]` 作为公式分隔符
 - Bash tool 的返回结果会被 rtk 代理压缩（去噪、合并类似条目、截断冗余、去重），只保留有效信息。
+- 学术调研时，若关键文献无法获取全文，**必须**告知用户并提供doi，**禁止**跳过。
 
 
 ## git
@@ -28,3 +30,36 @@
 2. **快速开始**（必选）— 从零到跑起来的最小步骤：安装、必要配置、运行。
 3. **配置**（条件必选）— 没有配置项时跳过。仅在存在环境变量、CLI 参数或配置文件时写。每个配置项写清楚：变量名、类型、默认值、含义。
 4. **用法 / API**（条件必选）— 仅当项目提供库接口、CLI 子命令或 HTTP 端点时写。按使用频率降序排列。
+
+## 长时间异步任务
+
+以下规则仅适用于 OpenAI Codex，不适用于其他 Agent 或工具。
+
+For long-running asynchronous work:
+
+- Empty `write_stdin` polls MUST use `yield_time_ms >= 180000`;
+  prefer `300000` when intermediate output is not needed.
+
+- `functions.wait` MUST use `yield_time_ms >= 180000`;
+  prefer `300000` for operations expected to run longer than five minutes.
+
+- Each `functions.exec` cell SHOULD contain at most one long blocking wait.
+  Its outer `@exec yield_time_ms` MUST exceed the nested wait by at
+  least 30000 ms.
+
+- If multiple waits are unavoidable, the outer yield MUST exceed the
+  complete awaited critical path:
+  - sequential waits: sum of their maximum waits + 30000 ms;
+  - parallel waits: longest wait + 30000 ms.
+
+- Do not apply long waits to non-empty `write_stdin` calls that send
+  interactive input. After sending input, use a separate empty poll
+  with the long-wait policy.
+
+- Wait tools may return early when work completes. Do not poll merely
+  to provide status updates, and do not repeat a no-progress wait at
+  a shorter interval.
+
+- Never use `yield_time_ms < 180000` as a retry or recovery strategy.
+  A shorter wait requires explicit evidence that timely intermediate
+  output or interaction is necessary.
