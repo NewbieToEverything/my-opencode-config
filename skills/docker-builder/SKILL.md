@@ -86,6 +86,21 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   RUN pip install -i https://pypi.tuna.tsinghua.edu.cn/simple --no-cache-dir <package>
   ```
 
+#### Dev Container 的可选 Git/SSH 配置
+默认由宿主机或宿主机上的 AI Agent 执行 Git 远程操作，容器不安装 `openssh-client`。仅当用户明确要求在 Dev Container 内执行 `clone`、`fetch`、`pull` 或 `push` 等 SSH 远程操作时，才安装 `openssh-client`，并通过 Dev Containers 转发的宿主机 SSH Agent 认证；不安装 `openssh-server`，也不运行 `sshd`。需要安装时，优先合并到已有系统依赖层；若前面存在高成本依赖层，则放在其后、最终非 root `USER` 之前，避免无关缓存失效：
+
+```dockerfile
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends openssh-client && \
+    rm -rf /var/lib/apt/lists/*
+```
+
+启用容器内 Git/SSH 时的安全边界：
+- 私钥只保留在宿主机 SSH Agent 中；禁止 `COPY` 私钥、挂载 `~/.ssh`、把私钥写入镜像/卷，或通过环境变量传递私钥
+- 禁止为了 Git 拉取/推送而把 `GITHUB_TOKEN`、`GITEE_TOKEN` 等 Token 写入 `devcontainer.json`、Compose、Dockerfile 或容器环境；SSH remote 使用 SSH Agent，HTTPS remote 使用宿主机 credential helper 桥接
+- 不硬编码或手动挂载 `SSH_AUTH_SOCK`；Dev Containers 会在 VS Code attach 会话中自动转发。若宿主 Agent 未加载密钥，要求用户在宿主机自行执行 `ssh-add`，不得读取或展示私钥、SSH 配置、账户名或指纹
+- 如果 Git 远程操作始终在宿主机完成，不为容器增加 SSH 客户端或认证配置
+
 #### 用户
 1. 检查宿主机用户名
 2. 下载完基础镜像后，临时用 `docker run --rm <镜像名> id` 确认默认用户
@@ -147,6 +162,9 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
   "shutdownAction": "stopCompose",
   "customizations": {
     "vscode": {
+      "settings": {
+        "<setting-name>": "<setting-value>"
+      },
       "extensions": [
         "<publisher.extension-id>"
       ]
@@ -157,11 +175,13 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 
 规则：
 - `service` 必须对应 Compose 服务，`workspaceFolder` 必须对应项目卷的容器内路径
+- JSON 同一对象中的键必须唯一；新增 VS Code 设置时，必须合并到唯一的 `customizations.vscode.settings` 对象，禁止再次声明 `settings`，否则前面的设置会在解析时被静默覆盖
 - 项目所需扩展全部写入 `customizations.vscode.extensions`
 - 新增扩展前检查官方 Marketplace/仓库中的 `extensionDependencies`、`extensionPack` 和功能要求，递归补齐扩展依赖
 - 同时检查扩展所需的 CLI、语言服务、内核和运行时包；一次性写入 Dev Container 与镜像依赖后再重建镜像
 - 仅在必要时添加 `postCreateCommand`，且只能执行快速、幂等的初始化或验证，不安装大依赖
-- **验证**：完成后检查 JSON 语法、执行 `docker compose config --quiet`，确认容器具有 Dev Container 配置标签，并检查容器端扩展列表
+- 默认不为 Dev Container 添加 Git/SSH 配置。仅当明确需要在容器内执行 Git SSH 远程操作时，镜像安装 `openssh-client`；`devcontainer.json` 仍不得添加私钥挂载、Token 环境变量或固定的 `SSH_AUTH_SOCK`，其余认证由宿主机 SSH Agent 和 Dev Containers attach 转发完成
+- **验证**：完成后检查 JSON 语法和重复键，核对 Dev Containers CLI 解析后的 `customizations.vscode.settings` 是否保留全部预期项；执行 `docker compose config --quiet`，确认容器具有 Dev Container 配置标签，并检查容器端扩展列表
 
 ## 第五步：验证与更新记录
 ### 构建验证
@@ -169,6 +189,13 @@ RUN pip config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple && 
 - 日志中无 ERROR
 - 验证必须覆盖项目的真实最小工作流，而不只是执行版本命令
 - 按项目实际能力验证：容器健康、扩展后端或语言服务可加载、代表性输入能生成预期输出、硬件加速可被框架使用
+
+### Dev Container Git/SSH 验证（仅在启用容器内 Git/SSH 时）
+- 宿主机先确认 `ssh-add -l` 表明 Agent 已加载至少一个身份；仅报告成功/失败，不输出路径、账户名或指纹
+- 镜像内确认 `command -v ssh` 成功，并确认未安装或启动 `sshd`
+- 通过 VS Code attach 后，在 Dev Container 集成终端确认 `SSH_AUTH_SOCK` 指向有效 socket、`ssh-add -l` 能看到转发身份
+- 对项目实际 SSH remote 执行非破坏性的认证检查和 `git fetch --dry-run`；不得用提交或推送代替连通性验证
+- 确认镜像、Compose、Dev Container 配置和容器环境中没有私钥及 Git 托管平台 Token
 
 ### GPU 验证
 如果需要使用 GPU,在容器启动后做如下验证：
