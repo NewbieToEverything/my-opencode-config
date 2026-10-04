@@ -1,0 +1,81 @@
+# docker-compose.yml 骨架
+#
+# 用法：复制本文件为项目的 docker-compose.yml，逐项替换尖括号占位符。
+# 每条 `必填` 注释对应 SKILL.md「必填字段」一节；不适用���整行删掉，别留空占位。
+#
+# 配套：`scripts/` 下有可直接调用的工具（如 GPU 透传验证、镜像分块拉取）。
+
+services:
+  <服务名>:
+    # ── 必填：自定义镜像必须显式指定 ──
+    # 构建自定义镜像时改用 build: {context: ., dockerfile: <路径>}
+    image: <镜像名>:<标签>
+
+    # ── 必填：小写字母与短横线 ──
+    container_name: <小写字母与短横线>
+
+    # ── 用户：见 SKILL.md「用户」一节 ──
+    # 自建镜像且默认用户 UID 已匹配时，镜像里已有 USER，可省本行
+    user: "${HOST_UID}:${HOST_GID}"
+
+    # 仅本机访问时绑回环；对外暴露必须先设 API_KEY 或放到反向代理后面
+    ports:
+      - "127.0.0.1:<端口>:<容器端口>"
+
+    # ── 必填：项目目录与环境变量文件都要显式挂载 ──
+    volumes:
+      - ./<项目数据目录>:/<容器内路径>
+
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all          # GPU 容器
+      - NVIDIA_DRIVER_CAPABILITIES=compute,utility
+      # - <KEY>=<value>
+
+    # ── 需要锁定内存的 GPU 应用（多数推理/训练程序）──
+    # 不设会导致 pinned 内存分配失败
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+
+    # ── GPU 容器必填 ──
+    # 若应用自己从 /proc/meminfo 读可用内存来决定缓存大小，不要加 mem_limit，
+    # 否则它的探测会失真（见 SKILL.md「内存上限的陷阱」）
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all          # 单卡机器写 all 与写 1 等效
+              capabilities: [gpu]
+
+    # ── 必填 ──
+    # start_period 必须覆盖全部初始化耗时：下载模型、编译、格式转换、首次建索引，
+    # 这些都发生在监听端口之前。估不准就往大给（数小时）。
+    # 不限 HTTP 端点，任意能判存活的方式都可以，例如：
+    #   test: ["CMD", "python3", "-c", "import sys;sys.exit(0)"]
+    healthcheck:
+      test: ["CMD", "curl", "-fs", "http://127.0.0.1:<容器端口>/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 36000s
+
+    # ── 必填 ──
+    restart: unless-stopped
+
+    # 用第三方 Dockerfile（含 COPY . .）时，本文件必须放在那个仓库根目录里，
+    # 因为构建上下文就是该目录——此时别把日志或临时产物写进来（见 SKILL.md「临时产物落盘位置」）
+
+    # 常用可选字段：
+    # container_name 之外的日志：
+    #   logging:
+    #     driver: json-file
+    #     options: {max-size: "10m", max-file: "3"}
+    # 无需 GPU 的辅助服务：
+    #   depends_on:
+    #     - <服务名>
+    # 需要读宿主机代理（代理只监听回环地址时）：
+    #   extra_hosts:
+    #     - "host.docker.internal:host-gateway"
+    #     - "host.docker.internal:<宿主IP>"
