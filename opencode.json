@@ -3,25 +3,122 @@
   "instructions": [
     "~/.config/opencode/rules/BROWSER_RULES.md"
   ],
-  "permission": {
-    "bash": {
-      "agent-browser*": "allow"
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "agent-browser*",
+      "effect": "allow"
     }
-  },
-  "provider": {
+  ],
+  "providers": {
+    "strata": {
+      "package": "@opencode/ai/providers/openai-compatible",
+      "name": "Strata (Qwen3.8-Flash-Next 125B)",
+      "settings": {
+        "baseURL": "http://localhost:8089/v1",
+        "apiKey": "anything"
+      },
+      "models": {
+        "strata": {
+          "name": "Qwen3.8-Flash-Next (high, 默认)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "high"
+          }
+        },
+        "strata-medium": {
+          "name": "Qwen3.8-Flash-Next (medium)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "medium"
+          }
+        },
+        "strata-low": {
+          "name": "Qwen3.8-Flash-Next (low, 快)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "low"
+          }
+        },
+        "strata-none": {
+          "name": "Qwen3.8-Flash-Next (no think)",
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
+          },
+          "limit": {
+            "context": 131072,
+            "output": 32768
+          },
+          "options": {
+            "reasoningEffort": "none"
+          }
+        }
+      }
+    },
     "llama-cpp-20b": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (20B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8081/v1",
         "apiKey": "anything"
       },
       "models": {
         "gpt-oss-20b-Q4_K_M.gguf": {
           "name": "gpt-oss-20b",
-          "modalities": {
-            "input": ["text"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 131072,
@@ -31,18 +128,23 @@
       }
     },
     "llama-cpp-120b": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (120B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8082/v1",
         "apiKey": "anything"
       },
       "models": {
         "gpt-oss-120b-mxfp4-00001-of-00003.gguf": {
           "name": "gpt-oss-120b",
-          "modalities": {
-            "input": ["text"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 131072,
@@ -52,18 +154,24 @@
       }
     },
     "llama-cpp-qwen35": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (Qwen35 35B-A3B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8083/v1",
         "apiKey": "anything"
       },
       "models": {
         "Qwen3.5-35B-A3B-Q4_K_M.gguf": {
           "name": "qwen35-35b-a3b",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 262144,
@@ -73,18 +181,24 @@
       }
     },
     "llama-cpp-qwen36": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (Qwen3.6 35B-A3B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8085/v1",
         "apiKey": "anything"
       },
       "models": {
         "Qwen3.6-35B-A3B-Q4_K_M.gguf": {
           "name": "qwen36-35b-a3b",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 262144,
@@ -94,18 +208,24 @@
       }
     },
     "llama-cpp-gemma4": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (Gemma 4 26B-A4B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8087/v1",
         "apiKey": "anything"
       },
       "models": {
         "gemma-4-26B-A4B-it-Q4_K_M.gguf": {
           "name": "gemma4-26b-a4b",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 262144,
@@ -115,18 +235,24 @@
       }
     },
     "llama-cpp-gemma4-12b": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (Gemma 4 12B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8086/v1",
         "apiKey": "anything"
       },
       "models": {
         "gemma-4-12b-it-Q4_K_M.gguf": {
           "name": "gemma-4-12b",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 131072,
@@ -136,18 +262,24 @@
       }
     },
     "llama-cpp-gemma4-26b-qat": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (Gemma 4 26B-A4B QAT)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8088/v1",
         "apiKey": "anything"
       },
       "models": {
         "gemma-4-26B-A4B-it-qat-UD-Q4_K_XL.gguf": {
           "name": "gemma4-26b-qat",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 262144,
@@ -157,18 +289,24 @@
       }
     },
     "llama-cpp-agentworld-35b": {
-      "npm": "@ai-sdk/openai-compatible",
+      "package": "@opencode/ai/providers/openai-compatible",
       "name": "llama.cpp (Qwen-AgentWorld 35B-A3B)",
-      "options": {
+      "settings": {
         "baseURL": "http://localhost:8084/v1",
         "apiKey": "anything"
       },
       "models": {
         "Qwen-AgentWorld-35B-A3B-Q4_K_M.gguf": {
           "name": "agentworld-35b",
-          "modalities": {
-            "input": ["text", "image"],
-            "output": ["text"]
+          "capabilities": {
+            "tools": true,
+            "input": [
+              "text",
+              "image"
+            ],
+            "output": [
+              "text"
+            ]
           },
           "limit": {
             "context": 262144,
