@@ -13,14 +13,14 @@
   "providers": {
     "strata": {
       "package": "@opencode/ai/providers/openai-compatible",
-      "name": "Strata (Qwen3.8-Flash-Next 125B)",
+      "name": "Strata",
       "settings": {
         "baseURL": "http://localhost:8089/v1",
         "apiKey": "anything"
       },
       "models": {
         "strata": {
-          "name": "Strata high｜默认（variant 可切 low/medium）",
+          "name": "Qwen3.8-Flash-Next",
           "capabilities": {
             "tools": true,
             "input": [
@@ -40,7 +40,7 @@
           }
         },
         "strata-none": {
-          "name": "Strata none｜不思考（最快）",
+          "name": "Qwen3.8-Flash-Next-None",
           "capabilities": {
             "tools": true,
             "input": [
