@@ -56,10 +56,11 @@ services:
     #   test: ["CMD", "python3", "-c", "import sys;sys.exit(0)"]
     healthcheck:
       test: ["CMD", "curl", "-fs", "http://127.0.0.1:<容器端口>/health"]
-      interval: 30s
-      timeout: 5s
+      start_interval: 10s    # 必填：start_period 内 10s 一查，尽快转 healthy
+      interval: 5m           # 必填：稳态间隔，常驻后就是永久的
+      timeout: 5s            # 按检查本体实测
       retries: 3
-      start_period: 36000s
+      start_period: 36000s   # 必填：覆盖全部初始化耗时，估不准往大给
 
     # ── 必填 ──
     restart: unless-stopped
