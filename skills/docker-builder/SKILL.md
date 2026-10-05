@@ -9,7 +9,14 @@ description: Docker 镜像构建、模型下载、Dev Container 扩展分析与�
 - 最终部署必须使用 `docker compose`；调试/验证阶段可临时用 `docker run`
 - `container_name`：必须使用小写字母+短横线
 - `image`：所有自定义镜像必须在 `docker-compose.yml` 中显式指定镜像名
-- `healthcheck`：所有服务必须配置生命周期健康检查（不限 HTTP 端点）。**`start_period` 必须覆盖下载模型、编译、格式转换、首次建索引等全部初始化耗时**——这些都发生在监听端口之前。估不准就往大给（数小时）：`restart` 只在容器退出时动作、不看 unhealthy，误判只产生假告警、不会中断任务。
+- `healthcheck`：所有服务必须配置生命周期健康检查（不限 HTTP 端点）。四个时间参数必须成对给出，**缺 `start_interval` 视为不合格**：
+  - `start_interval: 10s` — `start_period` 内的间隔，给短值，让容器尽快转 `healthy`
+  - `interval: 5m` — **稳态**间隔，给长值。容器一旦常驻，这个间隔就是永久的
+  - `timeout` — 按检查本体最慢一次的实测给，不要用默认 30s
+  - `start_period` — **必须覆盖下载模型、编译、格式转换、首次建索引等全部初始化耗时**——这些都发生在监听端口之前。估不准就往大给（数小时）；没有长初始化的项目给 1–2 分钟即可
+  - 版本门槛：`start_interval` 需 Docker Engine ≥ 25.0、Compose ≥ 2.20.2
+
+  `restart` 只在容器退出时动作、不看 unhealthy，误判只产生假告警、不会中断任务。
 - `restart`：所有服务必须配置（除非有明确理由不需要）
 - `volume`：若有以下内容，必须显示挂载
   - 项目目录
@@ -62,7 +69,16 @@ Docker 的代理分两层：
 - 国内镜像与代理解决的问题不同：CRAN、PyPI、APT 国内镜像只加速各自仓库；R-universe、GitHub Release、rustup 等非镜像来源仍应在需要时走代理。
 - 使用 `build.network: host` 时，Linux 构建阶段可通过 `127.0.0.1:<宿主机代理端口>` 访问宿主机代理；未使用 host 网络时才考虑 `host.docker.internal`，并在 Linux 上显式映射 `host-gateway`。
 - 代理只能在单次构建命令中通过 `--build-arg HTTP_PROXY=... --build-arg HTTPS_PROXY=...`（必要时同时传入小写变量）临时注入。禁止把代理写入 Dockerfile `ENV`、镜像层或项目的持久配置（build 阶段的验证方式见第三步）
-- 正式构建前，使用与构建阶段相同的网络模式和基础镜像，通过代理访问实际失败的下载地址；确认目标源返回成功状态后再重建，不能只测试普通网站。
+- **裸 `docker build` 的完整形态**（compose 的 `build.network: host` 等价；大小写四个都要给，实测缺一不可——只加 `--network host` 而不给 build args，构建仍然直连）：
+  ```bash
+  docker build --network host \
+    --build-arg HTTP_PROXY=http://127.0.0.1:<代理端口> --build-arg HTTPS_PROXY=http://127.0.0.1:<代理端口> \
+    --build-arg http_proxy=http://127.0.0.1:<代理端口> --build-arg https_proxy=http://127.0.0.1:<代理端口> \
+    -t <名字>:latest .
+  ```
+- **构建内下载卡住的典型症状与处置**：某一步反复打印 `... interrupted (The read operation timed out); retrying in N s ...`，进度退回同一个百分比、十几分钟不动，而宿主机网卡几乎没流量 → 构建容器在**直连**（被限速到几十 KB/s），不是上游挂了、也不是镜像源的问题。补上代理 build args 重跑即可（实测同一个 37.7 MB 的包：缺代理卡 40 分钟仍未过，给代理 17 秒下完）。
+- **`git pull` 后重建必然重跑下载与编译**：`COPY . .` 排在下载/编译之前，源码一变、它之后的所有层全部失效；Docker 层缓存只在「源码 + 构建命令完全没变」时命中（此时整条构建 0 秒完成，实测 7/7 步骤 CACHED）。这是 Dockerfile 结构决定的，别指望靠缓存绕开——把代理参数直接写进重建命令即可（实测有代理时：下载 17 秒 + CUDA 单架构编译约 3.5 分钟）。
+- 正式构建前，使用与构建阶段相同的网络模式和基础镜像，通过代理访问实际失败的下载地址；确认目标源返回成功状态后再重建，不能只测试普通网站。**`git pull` 后的重建同样要先做这一步**——上游可能更换了下载地址或版本号。
 
 #### docker 国内镜像源
 - **Docker镜像源配置**：使用 `docker pull` 下载基础镜像前，需先配置国内 docker 镜像源。在 `/etc/docker/daemon.json` 中配置多个镜像源以提升可移植性和稳定性：
