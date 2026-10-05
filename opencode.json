@@ -20,7 +20,7 @@
       },
       "models": {
         "strata": {
-          "name": "Qwen3.8-Flash-Next (high, 默认)",
+          "name": "Strata high｜默认（variant 可切 low/medium）",
           "capabilities": {
             "tools": true,
             "input": [
@@ -39,48 +39,8 @@
             "reasoningEffort": "high"
           }
         },
-        "strata-medium": {
-          "name": "Qwen3.8-Flash-Next (medium)",
-          "capabilities": {
-            "tools": true,
-            "input": [
-              "text",
-              "image"
-            ],
-            "output": [
-              "text"
-            ]
-          },
-          "limit": {
-            "context": 131072,
-            "output": 32768
-          },
-          "options": {
-            "reasoningEffort": "medium"
-          }
-        },
-        "strata-low": {
-          "name": "Qwen3.8-Flash-Next (low, 快)",
-          "capabilities": {
-            "tools": true,
-            "input": [
-              "text",
-              "image"
-            ],
-            "output": [
-              "text"
-            ]
-          },
-          "limit": {
-            "context": 131072,
-            "output": 32768
-          },
-          "options": {
-            "reasoningEffort": "low"
-          }
-        },
         "strata-none": {
-          "name": "Qwen3.8-Flash-Next (no think)",
+          "name": "Strata none｜不思考（最快）",
           "capabilities": {
             "tools": true,
             "input": [
