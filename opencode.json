@@ -10,6 +10,9 @@
       "effect": "allow"
     }
   ],
+  "compaction": {
+    "reserved": 45000
+  },
   "providers": {
     "strata": {
       "package": "@opencode/ai/providers/openai-compatible",
@@ -33,6 +36,7 @@
           },
           "limit": {
             "context": 131072,
+            "input": 131072,
             "output": 32768
           },
           "options": {
@@ -53,6 +57,7 @@
           },
           "limit": {
             "context": 131072,
+            "input": 131072,
             "output": 32768
           },
           "options": {
