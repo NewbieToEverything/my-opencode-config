@@ -210,7 +210,7 @@ def main():
     ap.add_argument("--chunk-mb", type=float, default=32,
 help="每块大小 MB，可写小数（默认 32；调试小文件时可写 0.004）")
     ap.add_argument("--proxy", default=os.environ.get("HTTPS_PROXY"),
-                    help="HTTP 代理，如 http://127.0.0.1:10808（默认取环境变量）")
+                    help="HTTP 代理，如 http://127.0.0.1:PORT（默认取环境变量）")
     a = ap.parse_args()
 
     targets = json.load(open(a.manifest, encoding="utf-8"))

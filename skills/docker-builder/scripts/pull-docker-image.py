@@ -19,11 +19,11 @@ docker-archive 格式：`<config>.json` + `manifest.json` + 各 `<id>/layer.tar`
 ----
     # 1) 只拉不导入（先看要下多少）
     python3 pull-docker-image.py nvidia/cuda:13.0.0-devel-ubuntu24.04 \
-        --work ~/cache/oci --proxy http://127.0.0.1:10808
+        --work ~/cache/oci --proxy http://127.0.0.1:PORT
 
     # 2) 拉完校验并导入
     python3 pull-docker-image.py nvidia/cuda:13.0.0-devel-ubuntu24.04 \
-        --work ~/cache/oci --proxy http://127.0.0.1:10808 --load
+        --work ~/cache/oci --proxy http://127.0.0.1:PORT --load
 
     # 走国内镜像源（把 blob 请求也导向镜像源，绕开上游 registry）
     python3 pull-docker-image.py nvidia/cuda:13.0.0-devel-ubuntu24.04 \
