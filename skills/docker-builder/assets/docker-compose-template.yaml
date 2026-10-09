@@ -1,7 +1,7 @@
 # docker-compose.yml 骨架
 #
 # 用法：复制本文件为项目的 docker-compose.yml，逐项替换尖括号占位符。
-# 每条 `必填` 注释对应 SKILL.md「必填字段」一节；不适用���整行删掉，别留空占位。
+# 每条 `必填` 注释对应 references/compose-build.md「本机 Compose 约定」一节；按任务选择字段，别留空占位；删改已有配置先按用户规则确认。
 #
 # 配套：`scripts/` 下有可直接调用的工具（如 GPU 透传验证、镜像分块拉取）。
 
@@ -14,7 +14,7 @@ services:
     # ── 必填：小写字母与短横线 ──
     container_name: <小写字母与短横线>
 
-    # ── 用户：见 SKILL.md「用户」一节 ──
+    # ── 用户：见 references/compose-build.md「用户」一节 ──
     # 自建镜像且默认用户 UID 已匹配时，镜像里已有 USER，可省本行
     user: "${HOST_UID}:${HOST_GID}"
 
@@ -39,8 +39,8 @@ services:
         hard: -1
 
     # ── GPU 容器必填 ──
-    # 若应用自己从 /proc/meminfo 读可用内存来决定缓存大小，不要加 mem_limit，
-    # 否则它的探测会失真（见 SKILL.md「内存上限的陷阱」）
+    # 内存限额会生效；应用若按宿主内存估算缓存，需同步设置应用内存预算，
+    # 避免其预算超过容器限额（见 references/compose-build.md「内存探测与上限」）
     deploy:
       resources:
         reservations:
@@ -53,7 +53,7 @@ services:
     # start_period 必须覆盖全部初始化耗时：下载模型、编译、格式转换、首次建索引，
     # 这些都发生在监听端口之前。估不准就往大给（数小时）。
     # 不限 HTTP 端点，任意能判存活的方式都可以，例如：
-    #   test: ["CMD", "python3", "-c", "import sys;sys.exit(0)"]
+    # 检查应验证服务或工作进程可用，不能使用无条件返回成功的命令。
     healthcheck:
       test: ["CMD", "curl", "-fs", "http://127.0.0.1:<容器端口>/health"]
       start_interval: 10s    # 必填：start_period 内 10s 一查，尽快转 healthy
@@ -65,8 +65,8 @@ services:
     # ── 必填 ──
     restart: unless-stopped
 
-    # 用第三方 Dockerfile（含 COPY . .）时，本文件必须放在那个仓库根目录里，
-    # 因为构建上下文就是该目录——此时别把日志或临时产物写进来（见 SKILL.md「临时产物落盘位置」）
+    # 第三方 Dockerfile 的构建上下文应指向对应仓库，可用 build.context 指定，
+    # Compose 文件不必位于该仓库——此时别把日志或临时产物写进来（见 references/compose-build.md「构建上下文与临时产物」）
 
     # 常用可选字段：
     # container_name 之外的日志：

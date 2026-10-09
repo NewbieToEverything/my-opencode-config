@@ -5,7 +5,7 @@
 
 ## 核心认知
 
-50 kb/s 这个阈值只告诉你"该收手"，不告诉你**为什么慢**。绝大多数"下载很慢"不是网络带宽不足，而是**上游按连接限速**——此时换镜像源、改 daemon 代理都无效，**只有增加并发连接才有效**。
+50 kb/s 这个阈值只告诉你"该收手"，不告诉你**为什么慢**。候选原因包括总带宽、按连接限速、代理节点、服务端拥塞及工具重试；先对比单连接与并发的总吞吐，再选择处置。并发只对相应瓶颈有效，不能由一次低速测量排除其他原因。
 
 实测现象：Docker Hub 与 hf-mirror.com 均为「单连接 30 秒内约 9 MB/s，随后掉到 180 KB/s」。同一时刻开 3~4 条新连接，总吞吐立刻从 2 MB/s 升到 13 MB/s。同一个文件、同一个代理、同一时刻。
 
@@ -24,12 +24,7 @@ B=$(awk '/:/{s+=$2} END{print s}' /proc/net/dev); echo $(( (B-A)/1024/10 )) KB/s
 
 避免把时间花在重复配置上：
 
-```bash
-docker info | grep -i "proxy"
-systemctl show docker --property=Environment | tr ' ' '\n' | grep -i proxy
-```
-
-**`systemctl show` 的 `Environment` 不展开 `EnvironmentFile`**——drop-in 里写的是 `EnvironmentFile=/etc/default/proxy.conf` 时，这条命令会显示为空，让人误判"没配代理"。此时以 `docker info` 为准。
+通过应用提供的非敏感状态判断代理是否配置；不要直接展示 `docker info` 的代理值、systemd Environment 或隐藏配置。对照实际失败目标的状态码与耗时检查链路。状态输出未展开 EnvironmentFile 时，空值不能证明未配置。
 
 ### 3. 是按连接限速，还是总带宽上限
 
@@ -37,8 +32,8 @@ systemctl show docker --property=Environment | tr ' ' '\n' | grep -i proxy
 
 | 长连接持续速率 | 短请求速率 | 结论 |
 |---------------|-----------|------|
-| 远低于短请求 | 短请求很快 | **按连接限速** → 加并发 |
-| 与短请求相当 | 两者都慢 | 总带宽上限 → 只能等 |
+| 远低于短请求 | 短请求很快 | 支持按连接限速假设；以并发总吞吐验证 |
+| 与短请求相当 | 两者都慢 | 可能是链路或上游瓶颈；继续核对代理、目标与状态码 |
 
 ## 确认按连接限速后的处理（按代价从低到高）
 
@@ -55,7 +50,7 @@ systemctl show docker --property=Environment | tr ' ' '\n' | grep -i proxy
 
 ## 断点续传
 
-长时间下载一律要求可续传：分块落到 parts 目录、逐块记录完成状态。这样重启、并行改造、被中断都能接着走，避免重下几十 GB。续传改造也顺带避免了并行时新旧进程抢同一文件的问题——先杀掉串行进程，再确认它打开的文件描述符指向的是已被替换的旧 inode（`ls -l /proc/<pid>/fd | grep <文件名>` 会显示 `(deleted)`），才可安全启动并行下载。
+长时间下载一律要求可续传：分块落到 parts 目录、逐块记录完成状态。这样重启、并行改造、被中断都能接着走，避免重下几十 GB。续传改造也顺带避免了并行时新旧进程抢同一文件的问题——先确认旧进程状态和文件所有权，按授权边界停止旧下载者；为新并行任务使用独立 parts 路径，校验成功后再合并。不要以观察到 deleted inode 作为安全续传条件；替换或删除已有文件前确认。
 
 ## 已落地的参考实现
 
@@ -68,3 +63,5 @@ systemctl show docker --property=Environment | tr ' ' '\n' | grep -i proxy
 | `mtp-parallel.sh` | 上游工具只有 `--only` 过滤时，用它拆子集并行 + 收尾全量校验 |
 
 关键设计：所有目标文件都是**内容寻址**的（OCI blob 按 digest、HF 张量按 LFS sha256），逐个校验通过才会装配或改名，任何一个字节不符即中止——这样并行下载与换源不会引入静默损坏。
+
+历史 cache 脚本不保证仍存在；优先使用本技能 `../scripts/net-probe.sh`、`../scripts/parallel-fetch.py` 和 `../scripts/pull-docker-image.py`。Range 下载先确认服务端支持及响应区间，使用任务预期 digest 做最终校验。
