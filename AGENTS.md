@@ -14,6 +14,7 @@
 	- 用户隐私信息：包括但不限于用户名、密码、令牌、API 密钥、邮箱、SSH 私钥、会话 cookie、数据库连接串、JWT Secret、加密盐值、云服务 Access Key ID
 - 自定义全局 skill **必须**放在 `~/projects/my-opencode-config/skills`
 - 回复、写作都**必须**言简意赅；执行过命令、测试或修改文件时，必须说明关键结果
+- 除正式论文外中文回复走 natural-reply；动原稿走 references/formal-guard.md
 - Bash tool 的返回结果会被 rtk 代理压缩（去噪、合并类似条目、截断冗余、去重），只保留有效信息。
 - 学术调研时，若关键文献无法获取全文，**必须**告知用户并提供doi，**禁止**跳过。
 
