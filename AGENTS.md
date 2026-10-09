@@ -10,13 +10,14 @@
 - **计划变更必须询问** - 用户明确指定的步骤、版本、配置或方案不得擅自偏离；AGENT 已告知用户的执行计划如需实质变更（如下载不同版本、修改配置、更换方案、改变数据处理方式等），必须先询问用户确认；不影响目标、风险和结果的小实现细节调整无需确认
 - **推断必须基于事实** - 对任何 bug、行为异常、代码逻辑或方案可用性等问题做出的推断，必须建立在事实基础上（官方文档、协议规范、源码、日志等）；没有事实依据时必须标注为假设，并说明需要用什么证据验证
 - **禁止 AGENT 直接读取和暴露**（包括但不限于呈现在任务完成时提供给用户的 summary 里、硬编码到代码/注释/config 中、写入日志等）以下敏感信息，无论任何理由：
-	- 隐藏配置文件：包括但不限于 `.env`、`.env.*`、`.gitconfig`、`.npmrc`、`./ssh/config`、`.bashrc`、`.bash_profile`
+	- 隐藏配置文件：包括但不限于 `.env`、`.env.*`、`.gitconfig`、`.npmrc`、`~/.ssh/config`、`.bashrc`、`.bash_profile`，`.devcontainer/devcontainer.json`除外
 	- 用户隐私信息：包括但不限于用户名、密码、令牌、API 密钥、邮箱、SSH 私钥、会话 cookie、数据库连接串、JWT Secret、加密盐值、云服务 Access Key ID
 - 自定义全局 skill **必须**放在 `~/projects/my-opencode-config/skills`
 - 回复、写作都**必须**言简意赅；执行过命令、测试或修改文件时，必须说明关键结果
 - 除正式论文外中文回复走 natural-reply；动原稿走 references/formal-guard.md
-- Bash tool 的返回结果会被 rtk 代理压缩（去噪、合并类似条目、截断冗余、去重），只保留有效信息。
-- 学术调研时，若关键文献无法获取全文，**必须**告知用户并提供doi，**禁止**跳过。
+- Bash tool 的返回结果会被 rtk 代理压缩（去噪、合并类似条目、截断冗余、去重），只保留有效信息
+- 学术调研时，若关键文献无法获取全文，**禁止**只根据摘要就做出判断，必须**告知用户并提供doi，**禁止**跳过
+- 处理已有 word、excel、ppt文档时，先另存，然后在另存的版本上修改，修改时**禁止**随意创建新版本。
 
 ## 数学公式
 对于包含数学公式的内容
@@ -37,35 +38,23 @@
 3. **配置**（条件必选）— 没有配置项时跳过。仅在存在环境变量、CLI 参数或配置文件时写。每个配置项写清楚：变量名、类型、默认值、含义。
 4. **用法 / API**（条件必选）— 仅当项目提供库接口、CLI 子命令或 HTTP 端点时写。按使用频率降序排列。
 
-## 长时间异步任务
+## 网页工具使用规则
 
-以下规则仅适用于 OpenAI Codex，不适用于其他 Agent 或工具。
+- agent-browser
+  - 使用 agent-browser 处理复杂的网页交互任务（获取网页数据、填写表单、点击按钮、截图、抓取动态内容、测试网页应用或自动化桌面应用）
+  - 使用 agent-browser 读取或写入文件时，必须把文件放在 `/tmp` 下
+  - agent-browser 不适用时（如操作失败、验证码测试失败等），使用 curl/wget
+- 使用内置 web 工具处理简单的一次性网页获取任务（读取静态内容、获取文档或搜索）
 
-For long-running asynchronous work:
-
-- Empty `write_stdin` polls MUST use `yield_time_ms >= 180000`;
-  prefer `300000` when intermediate output is not needed.
-
-- `functions.wait` MUST use `yield_time_ms >= 180000`;
-  prefer `300000` for operations expected to run longer than five minutes.
-
-- Each `functions.exec` cell SHOULD contain at most one long blocking wait.
-  Its outer `@exec yield_time_ms` MUST exceed the nested wait by at
-  least 30000 ms.
-
-- If multiple waits are unavoidable, the outer yield MUST exceed the
-  complete awaited critical path:
-  - sequential waits: sum of their maximum waits + 30000 ms;
-  - parallel waits: longest wait + 30000 ms.
-
-- Do not apply long waits to non-empty `write_stdin` calls that send
-  interactive input. After sending input, use a separate empty poll
-  with the long-wait policy.
-
-- Wait tools may return early when work completes. Do not poll merely
-  to provide status updates, and do not repeat a no-progress wait at
-  a shorter interval.
-
-- Never use `yield_time_ms < 180000` as a retry or recovery strategy.
-  A shorter wait requires explicit evidence that timely intermediate
-  output or interaction is necessary.
+### 网站特定规则
+所有 GitHub.com 操作（搜索仓库、查看 issue、读取文件等）**必须**使用以下方式之一：
+- **gh CLI**（推荐）：
+  ```bash
+  gh search repos "keyword"
+  gh issue view <number>
+  gh repo view <owner>/<repo>
+  ```
+- **Authenticated curl**：
+  ```bash
+  curl -s -H "Authorization: token $GITHUB_TOKEN" "https://api.github.com/..."
+  ```
