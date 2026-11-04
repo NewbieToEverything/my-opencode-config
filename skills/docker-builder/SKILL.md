@@ -26,6 +26,7 @@ description: 创建或修改 Docker 镜像、Compose 部署及 VS Code Dev Conta
 - 按已指定的版本和方案实施。安装软件、删除或覆盖现有内容、重启 Docker daemon、改变用户已确定的方案，按当前用户和项目规则取得确认。
 - 不读取隐藏配置、私钥或凭据；不展示用户名、令牌、会话信息或带凭据的代理地址。仅提取任务所需的非敏感状态。
 - 构建代理仅临时注入，不能写入镜像 ENV 或项目持久配置。Dev Container 的扩展下载网络按专门材料处理。
+- 不默认在 Dev Container 配置中声明 `GitHub.copilot` 和 `GitHub.copilot-chat`；先核实当前 VS Code 的内置扩展和实际功能，排查步骤见 Dev Container 材料。
 - 临时日志和下载产物不进入构建上下文；大文件先检查文件系统和容量，不把可能位于 tmpfs 的 `/tmp` 当数据盘。
 - Linux / Docker + nvidia-container-toolkit / RTX 5070 Ti 16GB（sm_120）是原有实测环境；具体速率、编译耗时和框架支持情况不得泛化到其他机器。
 

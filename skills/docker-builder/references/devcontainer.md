@@ -4,7 +4,8 @@
 
 ### 项目与开发工具分析
 - 在选择镜像和 Dev Container 扩展前，先检查仓库中的语言文件、依赖清单、正式入口、测试入口、调试配置和文档工作流，形成“项目能力 -> 编辑器扩展 -> 容器后端依赖”的对应表。
-- 只安装能够由项目事实支持的扩展，不根据项目名称猜测。扩展必须服务于至少一项实际工作：语言支持、调试、测试、数据查看、Notebook 或项目使用的文档格式。
+- 不默认在 `customizations.vscode.extensions` 声明 `GitHub.copilot` 和 `GitHub.copilot-chat`。本机实测的 VS Code Server 已内置 `GitHub.copilot-chat`，不应以用户扩展目录或扩展列表没有显示为依据断言插件缺失；其他版本和客户端应分别核实。Copilot 模型或功能异常时，先检查容器扩展宿主日志、远程代理配置、实际网络和账户状态。
+- 其他扩展按项目事实选择，不根据项目名称猜测。扩展应服务于语言支持、调试、测试、数据查看、Notebook 或项目使用的文档格式等实际工作。
 - 编辑器扩展写入 `devcontainer.json`，CLI、语言服务器、调试后端和 R/Python 包写入 Dockerfile 或项目依赖安装脚本。不得用手工安装扩展或在运行中临时安装包代替声明式配置。
 
 - 典型映射（作为核查线索，不作为无条件安装清单）：
@@ -51,10 +52,21 @@
 - JSON 同一对象中的键必须唯一；新增 VS Code 设置时，必须合并到唯一的 `customizations.vscode.settings` 对象，禁止再次声明 `settings`，否则前面的设置会在解析时被静默覆盖
 - 需要在容器内运行的扩展写入 `customizations.vscode.extensions`；纯 UI 扩展（主题、键位、代码片段、语法定义）留在宿主机，作为 Workspace 扩展的硬依赖时可保留声明以明确依赖闭包，但不得强制其在容器扩展宿主中运行。看到 UI 扩展"prefers to run"在本地的提示不属于安装失败
 - 新增扩展前检查官方 Marketplace、扩展仓库或 VSIX 中 `extension/package.json` 的 `extensionDependencies`、`extensionPack` 和功能要求，并递归核对依赖；扩展包中的可选成员按项目功能选择
-- **扩展下载网络必须按 Dev Container 的实际网络验证**：VS Code Server 可能通过 `--use-host-proxy` 继承宿主机代理。桥接网络中，容器内的 `127.0.0.1` 指向容器自身；若宿主机代理只监听回环地址，扩展清单或 VSIX 下载会出现 `ETIMEDOUT`、`ECONNRESET`，即使扩展已经正确声明也无法自动安装
+- **扩展下载网络必须按 Dev Container 的实际网络验证**：VS Code Server 可能通过 `--use-host-proxy` 继承宿主机代理；全局 `http.proxy` 也会穿透进 Remote（dev container）。桥接网络中，容器内的 `127.0.0.1` 指向容器自身；若宿主机代理只监听回环地址，扩展清单或 VSIX 下载会出现 `ETIMEDOUT`、`ECONNRESET`，即使扩展已经正确声明也无法自动安装。已安装扩展的运行时请求同样受害：Copilot 报 `sendFailed ... session.create ... copilot_internal/user`，且 `renderer.log` 出现 `Failed to establish a socket connection to proxies: PROXY 127.0.0.1:<port>` 即为此病，不要误判为 Copilot 服务故障（先核对 GitHub Status）
+- 本机 `effect-size-anova` 曾在容器内继承不可达的本地回环代理，模型列表异常并显示升级提示；取消远程设置 `http.useLocalProxyConfiguration` 后用户确认恢复，最新日志不再出现回环代理连接错误。该结果支持代理是原因，但不证明所有模型或其他请求均正常，也不能排除其他账户或网络故障。配置变更后检查远程设置是否真正生效，不能只看 `devcontainer.json`。
 - Linux 上若必须复用仅监听宿主机回环地址的代理，Compose 开发服务使用 `network_mode: host`，使容器能够访问宿主机的 `127.0.0.1:<proxy-port>`。使用 host 网络后不得再依赖 `ports` 映射；先检查端口冲突及该模式是否符合服务隔离要求。代理监听宿主机可路由地址时，优先使用该地址；非 Linux 环境按平台能力使用 `host.docker.internal`，不要无条件套用 host 网络
+- **代理管理软件的生成配置不得手改**：v2rayN 这类软件的入站配置是每次启动重写的生成文件（本机实测：`binConfigs/config.json` 的 mtime 与 xray 进程启动时间一致），手改监听地址会在软件重启后被覆盖，修法注定复发。改监听必须走软件自身的持久设置（如局域网监听开关）；改动后核对监听进程是否唯一（本机曾出现新老 xray 双进程并存）
 - 在唯一的 `customizations.vscode.settings` 中声明扩展下载所需的 VS Code 网络设置。只有确认 Marketplace/CDN 可直连时，才将相应官方域名加入 `http.noProxy`；其他请求可通过无凭据的 `http.proxy` 转发。不得把代理账号、密码或 Token 写入项目配置
-- 配置代理后，必须从目标 Compose 服务中分别请求 Marketplace 清单和实际 VSIX 下载地址，并使用与 VS Code Server 相同的直连/代理路径验证。普通网页可访问、版本命令成功或宿主机可下载，都不能证明容器内扩展安装链路可用
+- 配置代理后，必须从目标 Compose 服务中分别请求 Marketplace 清单和实际 VSIX 下载地址，并使用与 VS Code Server 相同的直连/代理路径验证。Copilot 的运行链路用 `curl https://api.github.com/copilot_internal/user` 在容器内验证，返回 401 即链路通（缺登录是正常的）。普通网页可访问、版本命令成功或宿主机可下载，都不能证明容器内扩展安装链路可用
+- **构建成功但进容器后网络失败，按运行层排查**：`build.network: host` 只管构建阶段（本机实测：构建时 R 包下载走通，运行时 Copilot 照挂）。出现"构建好、运行坏"时不要回头改构建代理，直接查本节运行层网络（`network_mode`、Remote 作用域 `http.proxy`/`noProxy`）；运行层 VS Code 网络设置必须写进唯一的 `customizations.vscode.settings`，容器内手改随重建丢失
+- **持久化会话数据时挂载点要高一级**：Copilot 会话在 `~/.vscode-server/data/User/{workspaceStorage,globalStorage}`，具名卷可保重建不丢，但必须挂到 `.vscode-server` 本级。若只挂 `data/`，容器启动时 runtime 会以 root 建出镜像里不存在的父目录 `.vscode-server`，VSCode 建 `bin/` 报 Permission denied，且每次重建复发（本机实测）。一卷一容器（防 SQLite 写坏），卷名按 compose 项目名前缀隔离；卷内 `bin/` 会随 VS Code 版本堆积旧 server，偶尔清理
+- **会话数据持久化配方（Copilot 聊天记录保重建不丢）**：会话在 `~/.vscode-server/data/User/{workspaceStorage,globalStorage}`。已在 `effect-size-anova`、`c_index` 双试点验证，步骤固定：
+  1. 先在运行中容器实测属主与 home（`id` + `$HOME` + `getent passwd`），不得批量套用——曾见 compose `user` 与 Dockerfile `USER` 打架、remoteUser 与运行用户不是同一个的案例。
+  2. compose 开发服务加 `- <vol>:/home/<user>/.vscode-server`（挂本级，禁挂 `data/` 子级），顶层补 `volumes:`；卷名按 compose 项目名前缀隔离，一卷一容器。
+  3. 先 `docker volume create <project>_<vol>`，再以 root 进临时容器把卷根 `chown` 到实测 uid:gid（新卷默认 root 拥有）；属必须用同容器连贯操作验证，btrfs 上卷根 mtime 显示异常是盘行为，不必深究。
+  4. `devcontainer.json` 加 `postAttachCommand` 留新删旧（`bin/`、`cli/` 只留最新 3 个：`ls -dt ... | tail -n +4 | xargs -r rm -rf`，逻辑已用假目录实测），`postCreateCommand` 不动。
+  5. 验收：`docker compose config --quiet`、JSON 解析、容器内以运行用户 touch 写测试、VSCode 重连成功；会话需下次重建后验证仍在。旧容器已销毁的历史找不回，只保以后。
+  6. 容器停着的项目等下次启动时现场核对再挂，不批量预挂
 - 扩展安装期间不要反复重开窗口或中止容器。安装被中断后，Dev Containers 的安装标记可能使后续连接不立即重试；先检查 Remote Server 日志和容器端扩展注册表。需要重新创建容器验证时，先确认没有不可中断任务并取得删除确认，禁止用手工安装代替自动安装验收
 - **debugger 扩展强制要求**：若项目包含可调试源码语言，`customizations.vscode.extensions` 必须包含该语言的 debugger 扩展；若 debugger 扩展需要额外的调试后端包（如 R 的 `vscDebugger`、Python 的 `debugpy`），必须在 Dockerfile 中显式安装。不得以"项目暂时不需要调试"为由省略 debugger 扩展
 - **R 执行扩展必须运行在容器内**：`REditorSupport.r` 和 `RDebugger.r-debugger` 需要调用容器内的 R、语言服务器和调试后端，但其清单未定义 `extensionKind`，因此必须在 `customizations.vscode.settings` 中强制为 workspace。`REditorSupport.r-syntax` 只贡献语言与语法定义，应留在 Local Extension Host，不得强制为 workspace：
